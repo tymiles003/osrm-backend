@@ -34,7 +34,7 @@ module.exports = function () {
                         json = JSON.parse(res.body);
                     }
 
-                    console.log(json);
+                    console.log(JSON.stringify(json));
 
                     if (headers.has('status')) {
                         got.status = json.status.toString();
@@ -59,7 +59,7 @@ module.exports = function () {
                             got.source = json.trips[0].source;
                         }
                         if (this.queryParams['destination']) {
-                            got.source = json.trips[0].destination;
+                            got.destination = json.trips[0].destination;
                         }
                     }
 
@@ -85,6 +85,12 @@ module.exports = function () {
                             })));
                             trip_durations = all_durations.map( a => a.reduce(add, 0));
                         }
+                        if(headers.has('distance')) {
+                            var all_distance = json.trips.filter(t => !!t).map(t => t.legs).map(tl => Array.prototype.concat.apply([], tl.map(sl => {
+                                return sl.distance;
+                            })));
+                            trip_distance = all_distance.map( a => a.reduce(add, 0));
+                        }
                     }
 
                     var ok = true,
@@ -99,9 +105,10 @@ module.exports = function () {
                             for (var ni=0; ni<sub.length; ni++) {
                                 var node = this.findNodeByName(sub[ni]),
                                     outNode = subTrips[si][ni];
+                                    console.log('outNode', outNode, ' node', node, '\n');
                                 if (this.FuzzyMatch.matchLocation(outNode, node)) {
-                                    encodedResult += sub[ni];
-                                    extendedTarget += sub[ni];
+                                    encodedResult += sub[ni]; console.log("encodedResult", encodedResult);
+                                    extendedTarget += sub[ni]; console.log("extendedTarget", extendedTarget);
                                 } else {
                                     ok = false;
                                     encodedResult += util.format('? [%s,%s]', outNode[0], outNode[1]);
@@ -120,6 +127,7 @@ module.exports = function () {
                     }
 
                     got.durations = trip_durations;
+                    got.distance = trip_distance;
 
                     for (var key in row) {
                         if (this.FuzzyMatch.match(got[key], row[key])) {

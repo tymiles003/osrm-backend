@@ -203,8 +203,8 @@ Status TripPlugin::HandleRequest(const std::shared_ptr<datafacade::BaseDataFacad
     if (parameters.source > -1 && parameters.destination > -1) {
         for (std::size_t r_counter = 0, f_counter = 0;
                 r_counter < result_table.size(), f_counter < tfse_table_.size();) {
-            // swap parameters.destination column with to column
-            if (r_counter % number_of_original_nodes == parameters.destination) {
+            // swap parameters.destination column with parameters.source column
+            if (r_counter % number_of_original_nodes == (long) parameters.destination) {
                 tfse_table_[f_counter - 2] = result_table_[r_counter++];
                 continue;
             }
