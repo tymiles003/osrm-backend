@@ -32,6 +32,12 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
              const RouteStepIterator step_entering_intersection,
              const RouteStepIterator step_leaving_intersection);
 
+// detect oscillating names where a name switch A->B->A occurs. This is often the case due to
+// bridges or tunnels
+bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
+                       const RouteStepIterator step_entering_intersection,
+                       const RouteStepIterator step_leaving_intersection);
+
 } /* namespace guidance */
 } /* namespace engine */
 } /* namespace osrm */

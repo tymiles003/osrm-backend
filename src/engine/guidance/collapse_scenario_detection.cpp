@@ -117,6 +117,19 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
     return is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn;
 }
 
+bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
+                       const RouteStepIterator step_entering_intersection,
+                       const RouteStepIterator step_leaving_intersection)
+{
+    const auto are_name_changes = hasTurnType(*step_entering_intersection, TurnType::NewName) &&
+                                  hasTurnType(*step_leaving_intersection, TurnType::NewName);
+    if( !are_name_changes )
+        return false;
+
+    const auto names_match = haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
+    return names_match;
+}
+
 } /* namespace guidance */
 } /* namespace engine */
 } /* namespace osrm */

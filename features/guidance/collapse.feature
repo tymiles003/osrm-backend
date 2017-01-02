@@ -931,8 +931,8 @@ Feature: Collapse
             | ej    | primary |       | off   | yes    |
 
         When I route I should get
-            | waypoints | route                            | turns                                                                                                        | locations       |
-            | k,j       | on,ferry,road,road,ferry,off,off | depart,notification straight,notification straight,continue uturn,turn straight,notification straight,arrive | k,g,a,b,c,d,e,j |
+            | waypoints | route                            | turns                                                                                                        | locations     |
+            | k,j       | on,ferry,road,road,ferry,off,off | depart,notification straight,notification straight,continue uturn,turn straight,notification straight,arrive | k,g,a,b,d,e,j |
 
     # http://www.openstreetmap.org/#map=19/37.78090/-122.41251
     Scenario: U-Turn onto unnamed-road

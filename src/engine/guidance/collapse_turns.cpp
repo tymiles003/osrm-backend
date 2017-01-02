@@ -262,6 +262,21 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
                 TransferSignageStrategy(),
                 NoModificationStrategy());
         }
+        else if (isNameOszillation(previous_step, current_step, next_step))
+        {
+            // first deactivate the second name switch
+            CombineRouteSteps(*current_step,
+                              *next_step,
+                              NoModificationStrategy(),
+                              NoModificationStrategy(),
+                              NoModificationStrategy());
+            // and then the first (to ensure both iterators to be valid)
+            CombineRouteSteps(*previous_step,
+                              *current_step,
+                              NoModificationStrategy(),
+                              NoModificationStrategy(),
+                              NoModificationStrategy());
+        }
     }
     return steps;
 }
