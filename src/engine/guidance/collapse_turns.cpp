@@ -159,6 +159,18 @@ void StaggeredTurnStrategy::operator()(RouteStep &step_at_turn_location,
                                                                      : TurnType::NewName;
 }
 
+SetFixedInstructionStrategy::SetFixedInstructionStrategy(
+    const extractor::guidance::TurnInstruction instruction)
+    : instruction(instruction)
+{
+}
+
+void SetFixedInstructionStrategy::operator()(RouteStep &step_at_turn_location,
+                                             const RouteStep &) const
+{
+    step_at_turn_location.maneuver.instruction = instruction;
+}
+
 void TransferSignageStrategy::operator()(RouteStep &step_at_turn_location,
                                          const RouteStep &transfer_from_step) const
 {
@@ -193,7 +205,8 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
     for (auto current_step = steps.begin() + 1; current_step + 1 != steps.end(); ++current_step)
     {
         std::cout << "At: " << std::distance(steps.begin(), current_step) << std::endl;
-        if (entersRoundabout(current_step->maneuver.instruction))
+        if (entersRoundabout(current_step->maneuver.instruction) ||
+            staysOnRoundabout(current_step->maneuver.instruction))
         {
             // Skip over all instructions within the roundabout
             for (; current_step + 1 != steps.end(); ++current_step)
@@ -206,6 +219,10 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
             else
                 continue;
         }
+
+        // only operate on actual turns
+        if (!hasTurnType(*current_step))
+            continue;
 
         // handle all situations involving the sliproad turn type
         if (hasTurnType(*current_step, TurnType::Sliproad))
@@ -235,6 +252,15 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
                               StaggeredTurnStrategy(*previous_step),
                               TransferSignageStrategy(),
                               NoModificationStrategy());
+        }
+        else if (isUTurn(previous_step, current_step, next_step))
+        {
+            CombineRouteSteps(
+                *current_step,
+                *next_step,
+                SetFixedInstructionStrategy({TurnType::Continue, DirectionModifier::UTurn}),
+                TransferSignageStrategy(),
+                NoModificationStrategy());
         }
     }
     return steps;

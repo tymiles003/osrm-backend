@@ -64,6 +64,14 @@ struct AdjustToCombinedTurnAngleStrategy : CombineStrategy
     void operator()(RouteStep &step_at_turn_location, const RouteStep &transfer_from_step) const;
 };
 
+struct SetFixedInstructionStrategy : CombineStrategy
+{
+    SetFixedInstructionStrategy(const extractor::guidance::TurnInstruction instruction);
+    void operator()(RouteStep &step_at_turn_location, const RouteStep &transfer_from_step) const;
+
+    const extractor::guidance::TurnInstruction instruction;
+};
+
 struct StaggeredTurnStrategy : CombineStrategy
 {
     StaggeredTurnStrategy(const RouteStep &step_prior_to_intersection);

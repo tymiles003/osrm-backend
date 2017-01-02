@@ -10,6 +10,27 @@ namespace engine
 namespace guidance
 {
 
+namespace
+{
+bool bearingsAreReversed(const double bearing_in, const double bearing_out)
+{
+    // Nearly perfectly reversed angles have a difference close to 180 degrees (straight)
+    const double left_turn_angle = [&]() {
+        if (0 <= bearing_out && bearing_out <= bearing_in)
+            return bearing_in - bearing_out;
+        return bearing_in + 360 - bearing_out;
+    }();
+    return util::angularDeviation(left_turn_angle, 180) <= 35;
+}
+
+bool isLinkroad(const RouteStep &step)
+{
+    const constexpr double MAX_LINK_ROAD_LENGTH = 60.0;
+    return step.distance <= MAX_LINK_ROAD_LENGTH && step.name_id == EMPTY_NAMEID;
+}
+
+} // namespace
+
 bool isStaggeredIntersection(const RouteStepIterator step_prior_to_intersection,
                              const RouteStepIterator step_entering_intersection,
                              const RouteStepIterator step_leaving_intersection)
@@ -79,19 +100,20 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
     const bool takes_u_turn = bearingsAreReversed(
         util::reverseBearing(step_entering_intersection->intersections.front()
                                  .bearings[step_entering_intersection->intersections.front().in]),
-        out_step.intersections.front().bearings[out_step.intersections.front().out]);
+        step_leaving_intersection->intersections.front()
+            .bearings[step_leaving_intersection->intersections.front().out]);
 
     if (!takes_u_turn)
         return false;
 
     // TODO check for name match after additional step
-    const auto names_match = haveSameName(step_prior_to_intersection, step_leaving_intersection);
+    const auto names_match = haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
 
     if (!names_match)
         return false;
 
     const auto is_short = step_entering_intersection->distance <= MAX_COLLAPSE_DISTANCE;
-    const auto only_allowed_turn = numberOfAllowedTurns(step_leaving_intersection) == 1;
+    const auto only_allowed_turn = numberOfAllowedTurns(*step_leaving_intersection) == 1;
     return is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn;
 }
 
