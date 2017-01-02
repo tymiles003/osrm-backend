@@ -56,7 +56,7 @@ double findTotalTurnAngle(const RouteStep &entry_step, const RouteStep &exit_ste
         angularDeviation(total_angle, 180) > 20)
     {
         // both angles are in the same direction, the total turn gets increased
-        //
+        // 
         // a ---- b
         //           \
         //              c
@@ -64,6 +64,7 @@ double findTotalTurnAngle(const RouteStep &entry_step, const RouteStep &exit_ste
         //              d
         //
         // Will be considered just like
+        // 
         // a -----b
         //        |
         //        c
@@ -74,9 +75,11 @@ double findTotalTurnAngle(const RouteStep &entry_step, const RouteStep &exit_ste
     else
     {
         // to prevent ignoring angles like
+        // 
         // a -- b
         //      |
         //      c -- d
+        // 
         // We don't combine both turn angles here but keep the very first turn angle.
         // We choose the first one, since we consider the first maneuver in a merge range the
         // important one
@@ -188,6 +191,15 @@ void TransferLanesStrategy::operator()(RouteStep &step_at_turn_location,
         transfer_from_step.intersections.front().lane_description;
 }
 
+void SuppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location)
+{
+    return CombineRouteSteps(step_at_turn_location,
+                             step_after_turn_location,
+                             NoModificationStrategy(),
+                             NoModificationStrategy(),
+                             NoModificationStrategy());
+}
+
 // OTHER IMPLEMENTATIONS
 OSRM_ATTR_WARN_UNUSED
 RouteSteps CollapseTurnInstructions(RouteSteps steps)
@@ -265,17 +277,19 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         else if (isNameOszillation(previous_step, current_step, next_step))
         {
             // first deactivate the second name switch
-            CombineRouteSteps(*current_step,
-                              *next_step,
-                              NoModificationStrategy(),
-                              NoModificationStrategy(),
-                              NoModificationStrategy());
+            SuppressStep(*current_step, *next_step);
             // and then the first (to ensure both iterators to be valid)
-            CombineRouteSteps(*previous_step,
-                              *current_step,
-                              NoModificationStrategy(),
-                              NoModificationStrategy(),
-                              NoModificationStrategy());
+            SuppressStep(*previous_step, *current_step);
+        }
+        else if (maneuverPreceededByNameChange(current_step,next_step))
+        {
+            AdjustToCombinedTurnAngleStrategy()(*next_step,*current_step);
+            // suppress previous step
+            SuppressStep(*previous_step,*current_step);
+        }
+        else
+        {
+            std::cout << "No Collapse Scenario Triggers" << std::endl;
         }
     }
     return steps;

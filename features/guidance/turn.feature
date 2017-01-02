@@ -913,10 +913,10 @@ Feature: Simple Turns
         Given the node map
             """
                 g f
-
-            d   c b a
-
-
+                | |
+            d---c-b-a
+                | |
+                | |
                 h e
             """
 
@@ -933,9 +933,9 @@ Feature: Simple Turns
             | gch   | North Capitol Street Northeast | primary     | yes    |
 
         When I route I should get
-            | waypoints | turns                   | route                                                                                   |
-            | a,d       | depart,arrive           | Channing Street Northeast,Channing Street Northwest                                     |
-            | a,h       | depart,turn left,arrive | Channing Street Northeast,North Capitol Street Northeast,North Capitol Street Northeast |
+            | waypoints | turns                           | route                                                                                   |
+            | a,d       | depart,new name straight,arrive | Channing Street Northeast,Channing Street Northwest,Channing Street Northwest           |
+            | a,h       | depart,turn left,arrive         | Channing Street Northeast,North Capitol Street Northeast,North Capitol Street Northeast |
 
     Scenario: V St NW, Florida Ave NW: Turn Instruction
     # https://www.mapillary.com/app/?focus=map&lat=38.91815595&lng=-77.03880249&z=17&pKey=sCxepTOCTZD3OoBXuqGEOw
@@ -1149,7 +1149,7 @@ Feature: Simple Turns
             | a,c       | in,through,through | depart,turn left,arrive |
 
     # http://www.openstreetmap.org/#map=19/52.51556/13.41832
-    Scenario: No Slight Right over Jannowitzbruecke
+    Scenario: No Slight Right at Stralauer Strasse
         Given the node map
         """
                   l   m
@@ -1178,17 +1178,17 @@ Feature: Simple Turns
             | waypoints | turns                            | route                                   |
             | a,e       | depart,new name straight,arrive  | Stralauer Str,Holzmarktstr,Holzmarktstr |
 
-    Scenario: No Slight Right over Jannowitzbruecke -- less extreme
+    Scenario: No Slight Right at Stralauer Strasse -- less extreme
         Given the node map
          """
                   l   m
                   |   |
             f_    |   |
-               ' 'g   h_
+               ' 'g---h_
                   |   |  '\_
                   |   |     i
             a_    |   |
-               '_ b   c_
+               '_ b___c_
                   |   |  \_
                   |   |     e
                   j   k
@@ -1207,17 +1207,17 @@ Feature: Simple Turns
             | waypoints | turns                           | route                                   |
             | a,e       | depart,new name straight,arrive | Stralauer Str,Holzmarktstr,Holzmarktstr |
 
-    Scenario: No Slight Right over Jannowitzbruecke
+    Scenario: No Slight Right at Stralauer Strasse
         Given the node map
          """
                   l   m
                   |   |
                   |   |
-              _ _ g   h_
+              _ _ g---h_
             f'    |   |  '_
                   |   |     i
                   |   |
-               _ _b   c__
+               _ _b---c__
             a'    |   |    'd
                   |   |
                   j   k
@@ -1233,8 +1233,8 @@ Feature: Simple Turns
             | kchm  | Alexanderstr  | primary   | yes    |
 
         When I route I should get
-            | waypoints | turns         | route                      |
-            | a,d       | depart,arrive | Stralauer Str,Holzmarktstr |
+            | waypoints | turns                           | route                                   |
+            | a,d       | depart,new name straight,arrive | Stralauer Str,Holzmarktstr,Holzmarktstr |
 
     #http://www.openstreetmap.org/#map=19/49.48761/8.47618
     @todo @3365

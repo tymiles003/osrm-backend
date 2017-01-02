@@ -1,6 +1,8 @@
 #include "engine/guidance/collapse_scenario_detection.hpp"
 #include "util/bearing.hpp"
 
+#include <numeric>
+
 #include <boost/assert.hpp>
 
 namespace osrm
@@ -123,11 +125,24 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
 {
     const auto are_name_changes = hasTurnType(*step_entering_intersection, TurnType::NewName) &&
                                   hasTurnType(*step_leaving_intersection, TurnType::NewName);
-    if( !are_name_changes )
+    if (!are_name_changes)
         return false;
 
     const auto names_match = haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
     return names_match;
+}
+
+bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_intersection,
+                                   const RouteStepIterator step_leaving_intersection)
+{
+    const auto is_short = step_entering_intersection->distance <= MAX_COLLAPSE_DISTANCE;
+    const auto is_name_change = hasTurnType(*step_entering_intersection, TurnType::NewName);
+
+    // don't simply suppress all names, the next turn needs to be heard
+    const auto is_vocal = !hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
+                          hasTurnType(*step_leaving_intersection);
+
+    return is_short && is_name_change && is_vocal;
 }
 
 } /* namespace guidance */

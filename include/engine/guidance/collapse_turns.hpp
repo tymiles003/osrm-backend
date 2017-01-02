@@ -121,6 +121,9 @@ void CombineRouteSteps(RouteStep &step_at_turn_location,
     step_after_turn_location.Invalidate();
 }
 
+// alias for suppressing a step, using CombineRouteStep with NoModificationStrategy only
+void SuppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location);
+
 } /* namespace guidance */
 } /* namespace osrm */
 } /* namespace osrm */
