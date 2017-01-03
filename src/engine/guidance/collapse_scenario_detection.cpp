@@ -31,6 +31,16 @@ bool isLinkroad(const RouteStep &step)
     return step.distance <= MAX_LINK_ROAD_LENGTH && step.name_id == EMPTY_NAMEID;
 }
 
+bool isCollapsableSegment(const RouteStep &step)
+{
+    const auto no_intermediary_intersections =
+        step.intersections.size() == 1;
+
+    const auto is_short = step.distance <= MAX_COLLAPSE_DISTANCE;
+
+    return is_short && no_intermediary_intersections;
+}
+
 } // namespace
 
 bool isStaggeredIntersection(const RouteStepIterator step_prior_to_intersection,
@@ -51,7 +61,7 @@ bool isStaggeredIntersection(const RouteStepIterator step_prior_to_intersection,
         const auto &intersection = step.intersections.front();
         const auto entry_bearing = intersection.bearings[intersection.in];
         const auto exit_bearing = intersection.bearings[intersection.out];
-        return util::angleBetweenBearings(entry_bearing, exit_bearing);
+        return util::bearing::angleBetween(entry_bearing, exit_bearing);
     };
 
     // Instead of using turn modifiers (e.g. as in isRightTurn) we want to be more strict here.
@@ -94,14 +104,19 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
              const RouteStepIterator step_entering_intersection,
              const RouteStepIterator step_leaving_intersection)
 {
+    if (hasRoundaboutType(step_prior_to_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
     // require modes to match up
     if (!haveSameMode(*step_prior_to_intersection, *step_entering_intersection) ||
         !haveSameMode(*step_entering_intersection, *step_leaving_intersection))
         return false;
 
     const bool takes_u_turn = bearingsAreReversed(
-        util::reverseBearing(step_entering_intersection->intersections.front()
-                                 .bearings[step_entering_intersection->intersections.front().in]),
+        util::bearing::reverse(step_entering_intersection->intersections.front()
+                                   .bearings[step_entering_intersection->intersections.front().in]),
         step_leaving_intersection->intersections.front()
             .bearings[step_leaving_intersection->intersections.front().out]);
 
@@ -116,13 +131,22 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
 
     const auto is_short = step_entering_intersection->distance <= MAX_COLLAPSE_DISTANCE;
     const auto only_allowed_turn = numberOfAllowedTurns(*step_leaving_intersection) == 1;
-    return is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn;
+
+    const auto no_intermediary_intersections =
+        step_entering_intersection->intersections.size() == 1;
+    return no_intermediary_intersections &&
+           (is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn);
 }
 
 bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
                        const RouteStepIterator step_entering_intersection,
                        const RouteStepIterator step_leaving_intersection)
 {
+    if (hasRoundaboutType(step_prior_to_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
     const auto are_name_changes = hasTurnType(*step_entering_intersection, TurnType::NewName) &&
                                   hasTurnType(*step_leaving_intersection, TurnType::NewName);
     if (!are_name_changes)
@@ -135,14 +159,39 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
 bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
-    const auto is_short = step_entering_intersection->distance <= MAX_COLLAPSE_DISTANCE;
+    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
+    const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
     const auto is_name_change = hasTurnType(*step_entering_intersection, TurnType::NewName);
 
     // don't simply suppress all names, the next turn needs to be heard
     const auto is_vocal = !hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
                           hasTurnType(*step_leaving_intersection);
 
-    return is_short && is_name_change && is_vocal;
+    return is_collapsable && is_name_change && is_vocal;
+}
+
+bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
+                                      const RouteStepIterator step_leaving_intersection)
+{
+    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
+    const auto is_short = step_entering_intersection->distance <= 2 * MAX_COLLAPSE_DISTANCE;
+    const auto has_correct_type = hasTurnType(*step_entering_intersection, TurnType::Suppressed) ||
+                                  hasTurnType(*step_entering_intersection, TurnType::Continue) ||
+                                  hasTurnType(*step_entering_intersection, TurnType::Turn);
+    const auto is_straight = hasModifier(*step_entering_intersection, DirectionModifier::Straight);
+
+    const auto only_choice = numberOfAllowedTurns(*step_leaving_intersection) == 1;
+
+    const auto no_intermediary_intersections =
+        step_entering_intersection->intersections.size() == 1;
+
+    return is_short && has_correct_type && is_straight && only_choice && no_intermediary_intersections;
 }
 
 } /* namespace guidance */

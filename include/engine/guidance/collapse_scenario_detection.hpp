@@ -49,6 +49,18 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
 bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection);
 
+// Due to obvious detection, sometimes we can have straight turns followed by a different turn right
+// next to each other. We combine both turns into one, if the second turn is without choice
+// 
+//         e
+// a - b - c
+//       ' d
+// 
+// with a main road `abd`, the turn `continue straight` at `b` and `turn left at `c` will become a
+// `turn left` at `b`
+bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
+                                      const RouteStepIterator step_leaving_intersection);
+
 } /* namespace guidance */
 } /* namespace engine */
 } /* namespace osrm */

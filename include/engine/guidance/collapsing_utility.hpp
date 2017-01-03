@@ -64,6 +64,11 @@ inline bool hasTurnType(const RouteStep &step, const TurnType::Enum type)
 {
     return type == step.maneuver.instruction.type;
 }
+inline bool hasModifier(const RouteStep &step, const DirectionModifier::Enum modifier)
+{
+    return modifier == step.maneuver.instruction.direction_modifier;
+}
+
 inline std::size_t numberOfAvailableTurns(const RouteStep &step)
 {
     return step.intersections.front().entry.size();

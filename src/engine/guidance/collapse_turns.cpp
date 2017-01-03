@@ -36,20 +36,20 @@ double findTotalTurnAngle(const RouteStep &entry_step, const RouteStep &exit_ste
     const auto exit_intersection = exit_step.intersections.front();
     const auto exit_step_exit_bearing = exit_intersection.bearings[exit_intersection.out];
     const auto exit_step_entry_bearing =
-        util::reverseBearing(exit_intersection.bearings[exit_intersection.in]);
+        util::bearing::reverse(exit_intersection.bearings[exit_intersection.in]);
 
     const auto entry_intersection = entry_step.intersections.front();
     const auto entry_step_entry_bearing =
-        util::reverseBearing(entry_intersection.bearings[entry_intersection.in]);
+        util::bearing::reverse(entry_intersection.bearings[entry_intersection.in]);
     const auto entry_step_exit_bearing = entry_intersection.bearings[entry_intersection.out];
 
     const auto exit_angle =
-        util::angleBetweenBearings(exit_step_entry_bearing, exit_step_exit_bearing);
+        util::bearing::angleBetween(exit_step_entry_bearing, exit_step_exit_bearing);
     const auto entry_angle =
-        util::angleBetweenBearings(entry_step_entry_bearing, entry_step_exit_bearing);
+        util::bearing::angleBetween(entry_step_entry_bearing, entry_step_exit_bearing);
 
     const double total_angle =
-        util::angleBetweenBearings(entry_step_entry_bearing, exit_step_exit_bearing);
+        util::bearing::angleBetween(entry_step_entry_bearing, exit_step_exit_bearing);
     // We allow for minor deviations from a straight line
     if (((entry_step.distance < MAX_COLLAPSE_DISTANCE && exit_step.intersections.size() == 1) ||
          (entry_angle <= 185 && exit_angle <= 185) || (entry_angle >= 175 && exit_angle >= 175)) &&
@@ -177,6 +177,13 @@ void SetFixedInstructionStrategy::operator()(RouteStep &step_at_turn_location,
 void TransferSignageStrategy::operator()(RouteStep &step_at_turn_location,
                                          const RouteStep &transfer_from_step) const
 {
+    if (step_at_turn_location.maneuver.instruction.type == TurnType::Continue &&
+        !haveSameName(step_at_turn_location, transfer_from_step))
+    {
+        // don't switch u-turns
+        if( step_at_turn_location.maneuver.instruction.type != DirectionModifier::UTurn )
+            step_at_turn_location.maneuver.instruction.type = TurnType::Turn;
+    }
     step_at_turn_location.AdaptStepSignage(transfer_from_step);
     step_at_turn_location.rotary_name = transfer_from_step.rotary_name;
     step_at_turn_location.rotary_pronunciation = transfer_from_step.rotary_pronunciation;
@@ -267,6 +274,7 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         }
         else if (isUTurn(previous_step, current_step, next_step))
         {
+            std::cout << "Uturn" << std::endl;
             CombineRouteSteps(
                 *current_step,
                 *next_step,
@@ -276,16 +284,27 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         }
         else if (isNameOszillation(previous_step, current_step, next_step))
         {
+            std::cout << "Name Oscillation" << std::endl;
             // first deactivate the second name switch
             SuppressStep(*current_step, *next_step);
             // and then the first (to ensure both iterators to be valid)
             SuppressStep(*previous_step, *current_step);
         }
-        else if (maneuverPreceededByNameChange(current_step,next_step))
+        else if (maneuverPreceededByNameChange(current_step, next_step))
         {
-            AdjustToCombinedTurnAngleStrategy()(*next_step,*current_step);
+            std::cout << "Name Change" << std::endl;
+            AdjustToCombinedTurnAngleStrategy()(*next_step, *current_step);
             // suppress previous step
-            SuppressStep(*previous_step,*current_step);
+            SuppressStep(*previous_step, *current_step);
+        }
+        else if (straightTurnFollowedByChoiceless(current_step, next_step))
+        {
+            std::cout << "Straight By Choiceless" << std::endl;
+            CombineRouteSteps(*current_step,
+                              *next_step,
+                              AdjustToCombinedTurnAngleStrategy(),
+                              TransferSignageStrategy(),
+                              NoModificationStrategy());
         }
         else
         {
