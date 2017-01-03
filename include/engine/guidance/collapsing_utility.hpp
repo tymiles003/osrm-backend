@@ -68,6 +68,10 @@ inline bool hasModifier(const RouteStep &step, const DirectionModifier::Enum mod
 {
     return modifier == step.maneuver.instruction.direction_modifier;
 }
+inline bool hasLanes(const RouteStep &step)
+{
+    return step.intersections.front().lanes.lanes_in_turn != 0;
+}
 
 inline std::size_t numberOfAvailableTurns(const RouteStep &step)
 {
@@ -92,6 +96,11 @@ inline void setInstructionType(RouteStep &step, const TurnType::Enum type)
 inline bool haveSameMode(const RouteStep &lhs, const RouteStep &rhs)
 {
     return lhs.mode == rhs.mode;
+}
+
+inline bool haveSameMode(const RouteStep &first, const RouteStep &second, const RouteStep &third)
+{
+    return haveSameMode(first,second) && haveSameMode(second,third);
 }
 
 inline bool haveSameName(const RouteStep &lhs, const RouteStep &rhs)

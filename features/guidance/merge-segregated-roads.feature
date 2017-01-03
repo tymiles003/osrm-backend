@@ -354,13 +354,13 @@ Feature: Merge Segregated Roads
             | hb    | road   | yes    |
 
         When I route I should get
-            | waypoints | turns                           | route            | intersections 									 |
-            | a,f       | depart,arrive                   | road,road        | true:180,false:0 true:180,false:0 true:180;true:0 |
-            | c,f       | depart,new name straight,arrive | bridge,road,road | true:180;false:0 true:180;true:0 				 |
-            | 1,f       | depart,new name straight,arrive | bridge,road,road | true:180;false:0 true:180;true:0                  |
-            | f,a       | depart,arrive                   | road,road        | true:0,true:0 false:180,true:0 false:180;true:180 |
-            | g,a       | depart,new name straight,arrive | bridge,road,road | true:0;true:0 false:180;true:180                  |
-            | 2,a       | depart,new name straight,arrive | bridge,road,road | true:0;true:0 false:180;true:180                  |
+            | waypoints | turns         | route       | intersections 									  |
+            | a,f       | depart,arrive | road,road   | true:180,false:0 true:180,false:0 true:180;true:0 |
+            | c,f       | depart,arrive | bridge,road | true:180,false:0 true:180;true:0 				  |
+            | 1,f       | depart,arrive | bridge,road | true:180,false:0 true:180;true:0                  |
+            | f,a       | depart,arrive | road,road   | true:0,true:0 false:180,true:0 false:180;true:180 |
+            | g,a       | depart,arrive | bridge,road | true:0,true:0 false:180;true:180                  |
+            | 2,a       | depart,arrive | bridge,road | true:0,true:0 false:180;true:180                  |
 
     @negative
     Scenario: Traffic Circle

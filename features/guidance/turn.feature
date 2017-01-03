@@ -23,15 +23,15 @@ Feature: Simple Turns
        When I route I should get
             | waypoints | route    | turns                           |
             | a,c       | ab,cb,cb | depart,turn left,arrive         |
-            | a,e       | ab,eb,eb | depart,new name straight,arrive |
+            | a,e       | ab,eb    | depart,arrive                   |
             | a,d       | ab,db,db | depart,turn right,arrive        |
             | c,a       | cb,ab,ab | depart,turn right,arrive        |
-            | c,d       | cb,db,db | depart,new name straight,arrive |
+            | c,d       | cb,db    | depart,arrive                   |
             | c,e       | cb,eb,eb | depart,turn left,arrive         |
             | d,a       | db,ab,ab | depart,turn left,arrive         |
-            | d,c       | db,cb,cb | depart,new name straight,arrive |
+            | d,c       | db,cb    | depart,arrive                   |
             | d,e       | db,eb,eb | depart,turn right,arrive        |
-            | e,a       | eb,ab,ab | depart,new name straight,arrive |
+            | e,a       | eb,ab    | depart,arrive                   |
             | e,c       | eb,cb,cb | depart,turn right,arrive        |
             | e,d       | eb,db,db | depart,turn left,arrive         |
 
@@ -53,15 +53,15 @@ Feature: Simple Turns
        When I route I should get
             | waypoints | route    | turns                           |
             | a,c       | ab,cb,cb | depart,turn left,arrive         |
-            | a,e       | ab,eb,eb | depart,new name straight,arrive |
+            | a,e       | ab,eb    | depart,arrive                   |
             | a,d       | ab,db,db | depart,turn right,arrive        |
             | c,a       | cb,ab,ab | depart,turn right,arrive        |
-            | c,d       | cb,db,db | depart,new name straight,arrive |
+            | c,d       | cb,db    | depart,arrive                   |
             | c,e       | cb,eb,eb | depart,turn left,arrive         |
             | d,a       | db,ab,ab | depart,turn left,arrive         |
-            | d,c       | db,cb,cb | depart,new name straight,arrive |
+            | d,c       | db,cb    | depart,arrive                   |
             | d,e       | db,eb,eb | depart,turn right,arrive        |
-            | e,a       | eb,ab,ab | depart,new name straight,arrive |
+            | e,a       | eb,ab    | depart,arrive                   |
             | e,c       | eb,cb,cb | depart,turn right,arrive        |
             | e,d       | eb,db,db | depart,turn left,arrive         |
 
@@ -86,10 +86,10 @@ Feature: Simple Turns
             | a,e       | abe,abe    | depart,arrive                   |
             | a,d       | abe,db,db  | depart,turn right,arrive        |
             | c,a       | cb,abe,abe | depart,turn right,arrive        |
-            | c,d       | cb,db,db   | depart,new name straight,arrive |
+            | c,d       | cb,db      | depart,arrive                   |
             | c,e       | cb,abe,abe | depart,turn left,arrive         |
             | d,a       | db,abe,abe | depart,turn left,arrive         |
-            | d,c       | db,cb,cb   | depart,new name straight,arrive |
+            | d,c       | db,cb      | depart,arrive                   |
             | d,e       | db,abe,abe | depart,turn right,arrive        |
             | e,a       | abe,abe    | depart,arrive                   |
             | e,c       | abe,cb,cb  | depart,turn right,arrive        |
@@ -139,9 +139,9 @@ Feature: Simple Turns
        When I route I should get
             | waypoints | route    | turns                           |
             | a,c       | ab,cb,cb | depart,turn left,arrive         |
-            | a,d       | ab,db,db | depart,new name straight,arrive |
+            | a,d       | ab,db    | depart,arrive                   |
             | d,c       | db,cb,cb | depart,turn right,arrive        |
-            | d,a       | db,ab,ab | depart,new name straight,arrive |
+            | d,a       | db,ab    | depart,arrive                   |
 
     Scenario: Three Way Intersection - Meeting Oneways
         Given the node map
@@ -208,7 +208,7 @@ Feature: Simple Turns
             | b,c       | ab,ac,ac | depart,turn sharp left,arrive   |
             | b,d       | ab,ad,ad | depart,turn left,arrive         |
             | b,e       | ab,ae,ae | depart,turn slight left,arrive  |
-            | b,f       | ab,af,af | depart,new name straight,arrive |
+            | b,f       | ab,af    | depart,arrive                   |
             | b,g       | ab,ag,ag | depart,turn slight right,arrive |
             | b,h       | ab,ah,ah | depart,turn right,arrive        |
             | b,i       | ab,ai,ai | depart,turn sharp right,arrive  |
@@ -241,7 +241,7 @@ Feature: Simple Turns
             | b,c       | ab,ac,ac | depart,turn sharp left,arrive   |
             | b,d       | ab,ad,ad | depart,turn left,arrive         |
             | b,e       | ab,ae,ae | depart,turn slight left,arrive  |
-            | b,f       | ab,af,af | depart,new name straight,arrive |
+            | b,f       | ab,af    | depart,arrive                   |
             | b,g       | ab,ag,ag | depart,turn slight right,arrive |
             | b,h       | ab,ah,ah | depart,turn right,arrive        |
             | b,i       | ab,ai,ai | depart,turn sharp right,arrive  |
@@ -743,10 +743,10 @@ Feature: Simple Turns
             | be    | primary | no     |
 
         When I route I should get
-            | waypoints | route    | turns                               |
-            | a,c       | abc,abc  | depart,arrive                       |
-            | d,e       | db,be,be | depart,new name slight right,arrive |
-            | e,d       | be,db,db | depart,new name slight left,arrive  |
+            | waypoints | route   | turns         |
+            | a,c       | abc,abc | depart,arrive |
+            | d,e       | db,be   | depart,arrive |
+            | e,d       | be,db   | depart,arrive |
 
      Scenario: Right Turn Assignment Three Conflicting Turns with invalid - 1
         Given the node map
@@ -904,10 +904,10 @@ Feature: Simple Turns
             | bd    | residential | in   |
 
         When I route I should get
-            | waypoints | turns                           | route        |
-            | a,c       | depart,arrive                   | road,road    |
-            | d,a       | depart,turn left,arrive         | in,road,road |
-            | d,c       | depart,new name straight,arrive | in,road,road |
+            | waypoints | turns                   | route        |
+            | a,c       | depart,arrive           | road,road    |
+            | d,a       | depart,turn left,arrive | in,road,road |
+            | d,c       | depart,arrive           | in,road      |
 
     Scenario: Channing Street
         Given the node map
@@ -933,9 +933,9 @@ Feature: Simple Turns
             | gch   | North Capitol Street Northeast | primary     | yes    |
 
         When I route I should get
-            | waypoints | turns                           | route                                                                                   |
-            | a,d       | depart,new name straight,arrive | Channing Street Northeast,Channing Street Northwest,Channing Street Northwest           |
-            | a,h       | depart,turn left,arrive         | Channing Street Northeast,North Capitol Street Northeast,North Capitol Street Northeast |
+            | waypoints | turns                   | route                                                                                   |
+            | a,d       | depart,arrive           | Channing Street Northeast,Channing Street Northwest                                     |
+            | a,h       | depart,turn left,arrive | Channing Street Northeast,North Capitol Street Northeast,North Capitol Street Northeast |
 
     Scenario: V St NW, Florida Ave NW: Turn Instruction
     # https://www.mapillary.com/app/?focus=map&lat=38.91815595&lng=-77.03880249&z=17&pKey=sCxepTOCTZD3OoBXuqGEOw
@@ -1030,9 +1030,9 @@ Feature: Simple Turns
             | ec    | Molkenmarkt   | secondary | yes    |
 
         When I route I should get
-            | waypoints | turns                              | route                                   |
-            | a,d       | depart,new name straight,arrive    | Molkenmarkt,Stralauer Str,Stralauer Str |
-            | e,d       | depart,new name slight left,arrive | Molkenmarkt,Stralauer Str,Stralauer Str |
+            | waypoints | turns         | route                     |
+            | a,d       | depart,arrive | Molkenmarkt,Stralauer Str |
+            | e,d       | depart,arrive | Molkenmarkt,Stralauer Str |
 
      # http://www.openstreetmap.org/#map=18/39.28158/-76.62291
      @3002
@@ -1175,8 +1175,8 @@ Feature: Simple Turns
             | kchm  | Alexanderstr  | primary   | yes    |
 
         When I route I should get
-            | waypoints | turns                            | route                                   |
-            | a,e       | depart,new name straight,arrive  | Stralauer Str,Holzmarktstr,Holzmarktstr |
+            | waypoints | turns          | route                      |
+            | a,e       | depart,arrive  | Stralauer Str,Holzmarktstr |
 
     Scenario: No Slight Right at Stralauer Strasse -- less extreme
         Given the node map
@@ -1204,8 +1204,8 @@ Feature: Simple Turns
             | kchm  | Alexanderstr  | primary   | yes    |
 
         When I route I should get
-            | waypoints | turns                           | route                                   |
-            | a,e       | depart,new name straight,arrive | Stralauer Str,Holzmarktstr,Holzmarktstr |
+            | waypoints | turns         | route                      |
+            | a,e       | depart,arrive | Stralauer Str,Holzmarktstr |
 
     Scenario: No Slight Right at Stralauer Strasse
         Given the node map
@@ -1233,8 +1233,8 @@ Feature: Simple Turns
             | kchm  | Alexanderstr  | primary   | yes    |
 
         When I route I should get
-            | waypoints | turns                           | route                                   |
-            | a,d       | depart,new name straight,arrive | Stralauer Str,Holzmarktstr,Holzmarktstr |
+            | waypoints | turns         | route                      |
+            | a,d       | depart,arrive | Stralauer Str,Holzmarktstr |
 
     #http://www.openstreetmap.org/#map=19/49.48761/8.47618
     @todo @3365

@@ -438,6 +438,9 @@ Feature: Collapse
              |
              |
              |
+             |
+             |
+             |
              g
             """
 
@@ -857,7 +860,7 @@ Feature: Collapse
 
        When I route I should get
             | waypoints | route          | turns                           | locations |
-            | a,e       | main,main,main | depart,use lane straight,arrive | a,b,e     |
+            | a,e       | main,main,main | depart,use lane straight,arrive | a,c,e     |
 
     Scenario: But _do_ collapse UseLane step when lanes stay the same
         Given the node map

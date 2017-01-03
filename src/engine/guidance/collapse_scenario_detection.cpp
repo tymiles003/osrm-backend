@@ -36,6 +36,7 @@ bool isCollapsableSegment(const RouteStep &step)
     const auto no_intermediary_intersections = step.intersections.size() == 1;
 
     const auto is_short = step.distance <= MAX_COLLAPSE_DISTANCE;
+    std::cout << "Step: " << step.distance << " " << step.intersections.size() << std::endl;
 
     return is_short && no_intermediary_intersections;
 }
@@ -109,8 +110,8 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
         return false;
 
     // require modes to match up
-    if (!haveSameMode(*step_prior_to_intersection, *step_entering_intersection) ||
-        !haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!haveSameMode(
+            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
         return false;
 
     const bool takes_u_turn = bearingsAreReversed(
@@ -125,6 +126,8 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
     // TODO check for name match after additional step
     const auto names_match = haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
 
+    if (!names_match)
+        std::cout << "Failing due to name missmatch" << std::endl;
     if (!names_match)
         return false;
 
@@ -146,26 +149,63 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
         hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
         return false;
 
+    if (!haveSameMode(
+            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
+        return false;
+
     const auto are_name_changes = hasTurnType(*step_entering_intersection, TurnType::NewName) &&
-                                  hasTurnType(*step_leaving_intersection, TurnType::NewName);
+                                  (hasTurnType(*step_leaving_intersection, TurnType::NewName) ||
+                                   (hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
+                                    step_leaving_intersection->name_id == EMPTY_NAMEID));
     if (!are_name_changes)
         return false;
 
-    const auto names_match = haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
+    const auto names_match =
+        // accept empty names as well as same names
+        step_prior_to_intersection->name_id == step_leaving_intersection->name_id ||
+        haveSameName(*step_prior_to_intersection, *step_leaving_intersection);
     return names_match;
 }
 
-bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_intersection,
+bool maneuverPreceededByNameChange(const RouteStepIterator step_prior_to_intersection,
+                                   const RouteStepIterator step_entering_intersection,
+                                   const RouteStepIterator step_leaving_intersection)
+{
+    // TODO refactor to not replicate this all the time
+    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
+    if (!haveSameMode(
+            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
+        return false;
+
+    const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
+    const auto is_name_change =
+        hasTurnType(*step_entering_intersection, TurnType::NewName) ||
+        (!hasTurnType(*step_entering_intersection, TurnType::Suppressed) &&
+         hasModifier(*step_entering_intersection, DirectionModifier::Straight));
+
+    return is_collapsable && is_name_change;
+}
+
+bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
     if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
         hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
         return false;
 
-    const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
-    const auto is_name_change = hasTurnType(*step_entering_intersection, TurnType::NewName);
+    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+        return false;
 
-    std::cout << "Col: " << is_collapsable << " NC: " << is_name_change << std::endl;
+    const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
+    const auto is_name_change =
+        hasTurnType(*step_leaving_intersection, TurnType::NewName) ||
+        (!hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
+         hasModifier(*step_leaving_intersection, DirectionModifier::Straight));
+
+    std::cout << "NC: " << is_name_change << " C: " << is_collapsable << std::endl;
 
     return is_collapsable && is_name_change;
 }
@@ -175,6 +215,9 @@ bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_inte
 {
     if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
         hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
+    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
         return false;
 
     const auto is_short = step_entering_intersection->distance <= 2 * MAX_COLLAPSE_DISTANCE;

@@ -46,7 +46,10 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
 // 
 // can have `a-b` as one name, `b-c-d` as a second. At `b` we would issue a new name, even though
 // the road turns right after. The offset would only be there due to the broad road at `e`
-bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_intersection,
+bool maneuverPreceededByNameChange(const RouteStepIterator step_prior_to_intersection,
+                                   const RouteStepIterator step_entering_intersection,
+                                   const RouteStepIterator step_leaving_intersection);
+bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection);
 
 // Due to obvious detection, sometimes we can have straight turns followed by a different turn right

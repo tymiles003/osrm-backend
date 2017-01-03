@@ -19,14 +19,14 @@ namespace guidance
 // Collapsing such turns into a single turn instruction, we give a clearer
 // set of instructionst that is not cluttered by unnecessary turns/name changes.
 OSRM_ATTR_WARN_UNUSED
-std::vector<RouteStep> CollapseTurnInstructions(std::vector<RouteStep> steps);
+std::vector<RouteStep> collapseTurnInstructions(std::vector<RouteStep> steps);
 
 // A combined turn is a set of two instructions that actually form a single turn, as far as we
 // perceive it. A u-turn consisting of two left turns is one such example. But there are also lots
 // of other items that influence how we combine turns. This function is an entry point, defining the
 // possibility to select one of multiple strategies when combining a turn with another one.
 template <typename CombinedTurnStrategy, typename SignageStrategy>
-RouteStep CombineRouteSteps(const RouteStep &step_at_turn_location,
+RouteStep combineRouteSteps(const RouteStep &step_at_turn_location,
                             const RouteStep &step_after_turn_location,
                             const CombinedTurnStrategy combined_turn_stragey,
                             const SignageStrategy signage_strategy);
@@ -64,6 +64,14 @@ struct AdjustToCombinedTurnAngleStrategy : CombineStrategy
     void operator()(RouteStep &step_at_turn_location, const RouteStep &transfer_from_step) const;
 };
 
+struct AdjustToCombinedTurnStrategy : CombineStrategy
+{
+    AdjustToCombinedTurnStrategy(const RouteStep &step_prior_to_intersection);
+    void operator()(RouteStep &step_at_turn_location, const RouteStep &transfer_from_step) const;
+
+    const RouteStep &step_prior_to_intersection;
+};
+
 struct SetFixedInstructionStrategy : CombineStrategy
 {
     SetFixedInstructionStrategy(const extractor::guidance::TurnInstruction instruction);
@@ -95,7 +103,7 @@ struct TransferLanesStrategy : LaneStrategy
 
 // IMPLEMENTATIONS
 template <typename CombineStrategyClass, typename SignageStrategyClass, typename LaneStrategyClass>
-void CombineRouteSteps(RouteStep &step_at_turn_location,
+void combineRouteSteps(RouteStep &step_at_turn_location,
                        RouteStep &step_after_turn_location,
                        CombineStrategyClass combined_turn_stragey,
                        SignageStrategyClass signage_strategy,
@@ -122,7 +130,7 @@ void CombineRouteSteps(RouteStep &step_at_turn_location,
 }
 
 // alias for suppressing a step, using CombineRouteStep with NoModificationStrategy only
-void SuppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location);
+void suppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location);
 
 } /* namespace guidance */
 } /* namespace osrm */

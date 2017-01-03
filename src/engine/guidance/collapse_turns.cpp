@@ -115,7 +115,7 @@ inline void handleSliproad(RouteStepIterator sliproad_step)
         std::cout << "Found to be the same" << std::endl;
         auto sliproad_turn_type = connecting_same_name_roads ? TurnType::Continue : TurnType::Turn;
         setInstructionType(*sliproad_step, sliproad_turn_type);
-        CombineRouteSteps(*sliproad_step,
+        combineRouteSteps(*sliproad_step,
                           *next_step,
                           AdjustToCombinedTurnAngleStrategy(),
                           TransferSignageStrategy(),
@@ -146,11 +146,67 @@ void AdjustToCombinedTurnAngleStrategy::operator()(RouteStep &step_at_turn_locat
     // TODO assert transfer_from_step == step_at_turn_location + 1
     const auto angle = findTotalTurnAngle(step_at_turn_location, transfer_from_step);
     step_at_turn_location.maneuver.instruction.direction_modifier = getTurnDirection(angle);
+}
 
-    // make vocal, if not vocal so far
-    if (hasTurnType(step_at_turn_location, TurnType::Suppressed) ||
-        hasTurnType(step_at_turn_location, TurnType::NewName))
-        step_at_turn_location.maneuver.instruction.type = TurnType::Turn;
+AdjustToCombinedTurnStrategy::AdjustToCombinedTurnStrategy(
+    const RouteStep &step_prior_to_intersection)
+    : step_prior_to_intersection(step_prior_to_intersection)
+{
+}
+
+void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
+                                              const RouteStep &transfer_from_step) const
+{
+    const auto angle = findTotalTurnAngle(step_at_turn_location, transfer_from_step);
+    const auto new_modifier = getTurnDirection(angle);
+
+    if (hasTurnType(transfer_from_step, TurnType::NewName) ||
+        (hasTurnType(transfer_from_step, TurnType::Turn) &&
+         hasModifier(transfer_from_step, DirectionModifier::Straight)))
+    {
+        std::cout << "New name: " << transfer_from_step.name
+                  << " Before: " << step_prior_to_intersection.name << " "
+                  << haveSameName(step_prior_to_intersection, transfer_from_step) << std::endl;
+        if (hasTurnType(step_at_turn_location, TurnType::Suppressed))
+        {
+            std::cout << "A" << std::endl;
+            if (new_modifier == DirectionModifier::Straight)
+            {
+                step_at_turn_location.maneuver.instruction = {TurnType::NewName, new_modifier};
+            }
+            else
+            {
+                step_at_turn_location.maneuver.instruction.type =
+                    haveSameName(step_prior_to_intersection, transfer_from_step)
+                        ? TurnType::Continue
+                        : TurnType::Turn;
+                step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+            }
+        }
+        else if (hasTurnType(step_at_turn_location, TurnType::Continue) &&
+                 !haveSameName(step_prior_to_intersection, transfer_from_step))
+        {
+            std::cout << "B" << std::endl;
+            setInstructionType(step_at_turn_location, TurnType::Turn);
+            step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+        }
+        else if (hasTurnType(step_at_turn_location, TurnType::Turn) &&
+                 haveSameName(step_prior_to_intersection, transfer_from_step))
+        {
+            std::cout << "C" << std::endl;
+            setInstructionType(step_at_turn_location, TurnType::Continue);
+            step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+        }
+        else
+        {
+            std::cout << "No Case Triggered" << std::endl;
+            step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+        }
+    }
+    else
+    {
+        step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+    }
 }
 
 StaggeredTurnStrategy::StaggeredTurnStrategy(const RouteStep &step_prior_to_intersection)
@@ -182,14 +238,6 @@ void SetFixedInstructionStrategy::operator()(RouteStep &step_at_turn_location,
 void TransferSignageStrategy::operator()(RouteStep &step_at_turn_location,
                                          const RouteStep &transfer_from_step) const
 {
-    if (step_at_turn_location.maneuver.instruction.type == TurnType::Continue &&
-        !haveSameName(step_at_turn_location, transfer_from_step))
-    {
-        // don't switch u-turns
-        if (step_at_turn_location.maneuver.instruction.direction_modifier !=
-            DirectionModifier::UTurn)
-            step_at_turn_location.maneuver.instruction.type = TurnType::Turn;
-    }
     step_at_turn_location.AdaptStepSignage(transfer_from_step);
     step_at_turn_location.rotary_name = transfer_from_step.rotary_name;
     step_at_turn_location.rotary_pronunciation = transfer_from_step.rotary_pronunciation;
@@ -204,9 +252,9 @@ void TransferLanesStrategy::operator()(RouteStep &step_at_turn_location,
         transfer_from_step.intersections.front().lane_description;
 }
 
-void SuppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location)
+void suppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_location)
 {
-    return CombineRouteSteps(step_at_turn_location,
+    return combineRouteSteps(step_at_turn_location,
                              step_after_turn_location,
                              NoModificationStrategy(),
                              NoModificationStrategy(),
@@ -215,7 +263,7 @@ void SuppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_l
 
 // OTHER IMPLEMENTATIONS
 OSRM_ATTR_WARN_UNUSED
-RouteSteps CollapseTurnInstructions(RouteSteps steps)
+RouteSteps collapseTurnInstructions(RouteSteps steps)
 {
     // make sure we can safely iterate over all steps (has depart/arrive with TurnType::NoTurn)
     BOOST_ASSERT(!hasTurnType(steps.front()) && !hasTurnType(steps.back()));
@@ -273,7 +321,7 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         if (isStaggeredIntersection(previous_step, current_step, next_step))
         {
             std::cout << "Staggered" << std::endl;
-            CombineRouteSteps(*current_step,
+            combineRouteSteps(*current_step,
                               *next_step,
                               StaggeredTurnStrategy(*previous_step),
                               TransferSignageStrategy(),
@@ -282,7 +330,7 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         else if (isUTurn(previous_step, current_step, next_step))
         {
             std::cout << "Uturn" << std::endl;
-            CombineRouteSteps(
+            combineRouteSteps(
                 *current_step,
                 *next_step,
                 SetFixedInstructionStrategy({TurnType::Continue, DirectionModifier::UTurn}),
@@ -293,21 +341,31 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         {
             std::cout << "Name Oscillation" << std::endl;
             // first deactivate the second name switch
-            SuppressStep(*current_step, *next_step);
+            suppressStep(*current_step, *next_step);
             // and then the first (to ensure both iterators to be valid)
-            SuppressStep(*previous_step, *current_step);
+            suppressStep(*previous_step, *current_step);
         }
-        else if (maneuverPreceededByNameChange(current_step, next_step))
+        else if (maneuverPreceededByNameChange(previous_step, current_step, next_step))
         {
             std::cout << "Name Change" << std::endl;
-            AdjustToCombinedTurnAngleStrategy()(*next_step, *current_step);
+            const auto strategy = AdjustToCombinedTurnStrategy(*previous_step);
+            strategy(*next_step, *current_step);
             // suppress previous step
-            SuppressStep(*previous_step, *current_step);
+            suppressStep(*previous_step, *current_step);
+        }
+        else if (maneuverSucceededByNameChange(current_step, next_step))
+        {
+            std::cout << "Name Change After" << std::endl;
+            combineRouteSteps(*current_step,
+                              *next_step,
+                              AdjustToCombinedTurnStrategy(*previous_step),
+                              TransferSignageStrategy(),
+                              NoModificationStrategy());
         }
         else if (straightTurnFollowedByChoiceless(current_step, next_step))
         {
             std::cout << "Straight By Choiceless" << std::endl;
-            CombineRouteSteps(*current_step,
+            combineRouteSteps(*current_step,
                               *next_step,
                               AdjustToCombinedTurnAngleStrategy(),
                               TransferSignageStrategy(),

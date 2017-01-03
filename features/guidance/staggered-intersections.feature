@@ -97,9 +97,9 @@ Feature: Staggered Intersections
             | jcdehi | residential | Cedar Dr |
 
         When I route I should get
-            | waypoints | route                | turns                           | locations |
-            | a,g       | Oak St,Elm St,Elm St | depart,new name straight,arrive | a,c,g     |
-            | g,a       | Elm St,Oak St,Oak St | depart,new name straight,arrive | g,e,a     |
+            | waypoints | route         | turns         | locations |
+            | a,g       | Oak St,Elm St | depart,arrive | a,g       |
+            | g,a       | Elm St,Oak St | depart,arrive | g,a       |
 
     Scenario: Staggered Intersection: do not collapse if a mode change is involved
         Given the node map
