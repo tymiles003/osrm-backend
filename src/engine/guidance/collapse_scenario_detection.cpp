@@ -33,8 +33,7 @@ bool isLinkroad(const RouteStep &step)
 
 bool isCollapsableSegment(const RouteStep &step)
 {
-    const auto no_intermediary_intersections =
-        step.intersections.size() == 1;
+    const auto no_intermediary_intersections = step.intersections.size() == 1;
 
     const auto is_short = step.distance <= MAX_COLLAPSE_DISTANCE;
 
@@ -166,11 +165,9 @@ bool maneuverPreceededByNameChange(const RouteStepIterator step_entering_interse
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
     const auto is_name_change = hasTurnType(*step_entering_intersection, TurnType::NewName);
 
-    // don't simply suppress all names, the next turn needs to be heard
-    const auto is_vocal = !hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
-                          hasTurnType(*step_leaving_intersection);
+    std::cout << "Col: " << is_collapsable << " NC: " << is_name_change << std::endl;
 
-    return is_collapsable && is_name_change && is_vocal;
+    return is_collapsable && is_name_change;
 }
 
 bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
@@ -184,6 +181,7 @@ bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_inte
     const auto has_correct_type = hasTurnType(*step_entering_intersection, TurnType::Suppressed) ||
                                   hasTurnType(*step_entering_intersection, TurnType::Continue) ||
                                   hasTurnType(*step_entering_intersection, TurnType::Turn);
+
     const auto is_straight = hasModifier(*step_entering_intersection, DirectionModifier::Straight);
 
     const auto only_choice = numberOfAllowedTurns(*step_leaving_intersection) == 1;
@@ -191,7 +189,8 @@ bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_inte
     const auto no_intermediary_intersections =
         step_entering_intersection->intersections.size() == 1;
 
-    return is_short && has_correct_type && is_straight && only_choice && no_intermediary_intersections;
+    return is_short && has_correct_type && is_straight && only_choice &&
+           no_intermediary_intersections;
 }
 
 } /* namespace guidance */

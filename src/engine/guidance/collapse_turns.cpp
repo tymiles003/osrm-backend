@@ -146,6 +146,11 @@ void AdjustToCombinedTurnAngleStrategy::operator()(RouteStep &step_at_turn_locat
     // TODO assert transfer_from_step == step_at_turn_location + 1
     const auto angle = findTotalTurnAngle(step_at_turn_location, transfer_from_step);
     step_at_turn_location.maneuver.instruction.direction_modifier = getTurnDirection(angle);
+
+    // make vocal, if not vocal so far
+    if (hasTurnType(step_at_turn_location, TurnType::Suppressed) ||
+        hasTurnType(step_at_turn_location, TurnType::NewName))
+        step_at_turn_location.maneuver.instruction.type = TurnType::Turn;
 }
 
 StaggeredTurnStrategy::StaggeredTurnStrategy(const RouteStep &step_prior_to_intersection)
@@ -181,7 +186,8 @@ void TransferSignageStrategy::operator()(RouteStep &step_at_turn_location,
         !haveSameName(step_at_turn_location, transfer_from_step))
     {
         // don't switch u-turns
-        if( step_at_turn_location.maneuver.instruction.type != DirectionModifier::UTurn )
+        if (step_at_turn_location.maneuver.instruction.direction_modifier !=
+            DirectionModifier::UTurn)
             step_at_turn_location.maneuver.instruction.type = TurnType::Turn;
     }
     step_at_turn_location.AdaptStepSignage(transfer_from_step);
@@ -266,6 +272,7 @@ RouteSteps CollapseTurnInstructions(RouteSteps steps)
         // directions (e.g. right + left) with a very short segment in between
         if (isStaggeredIntersection(previous_step, current_step, next_step))
         {
+            std::cout << "Staggered" << std::endl;
             CombineRouteSteps(*current_step,
                               *next_step,
                               StaggeredTurnStrategy(*previous_step),
