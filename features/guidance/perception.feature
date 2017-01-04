@@ -97,5 +97,5 @@ Feature: Simple Turns
             | ei    | left  | yes    |
 
         When I route I should get
-            | waypoints | route   |
-            | g,a       | in,road |
+            | waypoints | route        | turns                    |
+            | g,a       | in,road,road | depart,fork right,arrive |

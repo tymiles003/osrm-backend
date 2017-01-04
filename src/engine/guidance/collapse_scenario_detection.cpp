@@ -219,7 +219,8 @@ bool maneuverPreceededBySuppressedDirection(const RouteStepIterator step_enterin
 
     const auto has_choice = numberOfAllowedTurns(*step_entering_intersection) > 1;
 
-    return is_collapsable && has_choice && is_suppressed_direction && followed_by_maneuver && keeps_direction;
+    return is_collapsable && has_choice && is_suppressed_direction && followed_by_maneuver &&
+           keeps_direction;
 }
 
 bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,

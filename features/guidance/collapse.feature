@@ -958,8 +958,8 @@ Feature: Collapse
             | ef    | secondary |                | down  | yes    |
 
         When I route I should get
-            | waypoints | route     | turns                                     | locations |
-            | a,1       | up,turn,, | depart,turn right,turn sharp right,arrive | a,b,e,f,_ |
+            | waypoints | route         | turns                                     | locations |
+            | a,1       | up,turn,down, | depart,turn right,turn sharp right,arrive | a,b,e,_   |
 
     #http://www.openstreetmap.org/#map=19/52.48778/13.30024
     Scenario: Hohenzollerdammbrücke

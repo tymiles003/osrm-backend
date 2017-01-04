@@ -119,7 +119,7 @@ inline void handleSliproad(RouteStepIterator sliproad_step)
                           *next_step,
                           AdjustToCombinedTurnAngleStrategy(),
                           TransferSignageStrategy(),
-                          NoModificationStrategy());
+                          TransferLanesStrategy());
     }
 }
 

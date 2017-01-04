@@ -18,28 +18,36 @@ std::vector<RouteStep> suppressShortNameSegments(std::vector<RouteStep> steps)
     BOOST_ASSERT(!hasTurnType(steps.back()) && hasWaypointType(steps.back()));
     for (auto prev = steps.begin(), itr = std::next(prev); itr != steps.end(); ++itr)
     {
-        if (!hasTurnType(*itr))
+        if (!hasTurnType(*itr) || hasTurnType(*itr, TurnType::Suppressed))
             continue;
 
         if (hasTurnType(*itr, TurnType::NewName) && haveSameMode(*prev, *itr) && !hasLanes(*itr))
         {
-            auto distance = itr->distance;
             const auto name = itr;
-
-            // sum up all distances that can be relevant to the name change
-            ++itr;
-            while (!hasWaypointType(*itr) &&
-                   (!hasTurnType(*itr) || hasTurnType(*itr, TurnType::Suppressed)) &&
-                   distance < NAME_SEGMENT_CUTOFF_LENGTH)
+            if (haveSameName(*prev, *itr))
             {
-                distance += itr->distance;
-                ++itr;
-            }
-
-            if (distance < NAME_SEGMENT_CUTOFF_LENGTH)
+                std::cout << "Advancing nothing, suppressing name" << std::endl;
                 name->maneuver.instruction.type = TurnType::Suppressed;
+            }
+            else
+            {
+                std::cout << "Names: " << prev->name << " " << itr->name << std::endl;
+                auto distance = itr->distance;
+                // sum up all distances that can be relevant to the name change
+                ++itr;
+                while (!hasWaypointType(*itr) &&
+                       (!hasTurnType(*itr) || hasTurnType(*itr, TurnType::Suppressed)) &&
+                       distance < NAME_SEGMENT_CUTOFF_LENGTH)
+                {
+                    distance += itr->distance;
+                    ++itr;
+                }
 
-            prev = name;
+                if (distance < NAME_SEGMENT_CUTOFF_LENGTH)
+                    name->maneuver.instruction.type = TurnType::Suppressed;
+                else
+                    prev = name;
+            }
         }
         else
         {
