@@ -444,7 +444,7 @@ Feature: Simple Turns
 
        When I route I should get
             | waypoints | route          | turns                        | locations | #                                                                                       |
-            | g,f       | turn,road      | depart,arrive                | g,f       | #could offer an additional turn at `e` if you don't detect the turn in between as curve |
+            | g,f       | turn,road,road | depart,turn left,arrive      | g,e,f     | #could offer an additional turn at `e` if you don't detect the turn in between as curve |
             | c,f       | road,road,road | depart,continue right,arrive | c,b,f     |                                                                                         |
 
     #http://www.openstreetmap.org/search?query=52.479264%2013.295617#map=19/52.47926/13.29562

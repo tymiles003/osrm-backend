@@ -33,6 +33,9 @@ const constexpr double MAX_COLLAPSE_DISTANCE = 30;
 // TODO rework this
 double findTotalTurnAngle(const RouteStep &entry_step, const RouteStep &exit_step)
 {
+    if (entry_step.geometry_begin > exit_step.geometry_begin)
+        return findTotalTurnAngle(exit_step, entry_step);
+
     const auto exit_intersection = exit_step.intersections.front();
     const auto exit_step_exit_bearing = exit_intersection.bearings[exit_intersection.out];
     const auto exit_step_entry_bearing =
@@ -159,6 +162,8 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
     const auto angle = findTotalTurnAngle(step_at_turn_location, transfer_from_step);
     const auto new_modifier = getTurnDirection(angle);
 
+    std::cout << "Total turn angle: " << angle << std::endl;
+
     const auto transferring_from_non_turn =
         hasTurnType(transfer_from_step, TurnType::NewName) ||
         (hasTurnType(transfer_from_step, TurnType::Turn) &&
@@ -195,6 +200,15 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
                 step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
             }
         }
+        else if (hasTurnType(step_at_turn_location, TurnType::NewName) &&
+                 hasTurnType(transfer_from_step, TurnType::Suppressed))
+        {
+            std::cout << "D" << std::endl;
+            if (new_modifier != DirectionModifier::Straight)
+                step_at_turn_location.maneuver.instruction = {TurnType::Turn, new_modifier};
+            else
+                step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+        }
         else if (hasTurnType(step_at_turn_location, TurnType::Continue) &&
                  !haveSameName(step_prior_to_intersection, transfer_from_step))
         {
@@ -220,6 +234,13 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
     {
         if (haveSameName(step_prior_to_intersection, transfer_from_step))
             setInstructionType(step_at_turn_location, TurnType::Continue);
+        step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+    }
+    else if (hasTurnType(step_at_turn_location, TurnType::Continue) &&
+             hasTurnType(transfer_from_step, TurnType::Turn))
+    {
+        if (!haveSameName(step_prior_to_intersection, transfer_from_step))
+            setInstructionType(step_at_turn_location, TurnType::Turn);
         step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
     }
     else
@@ -364,7 +385,8 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
             // and then the first (to ensure both iterators to be valid)
             suppressStep(*previous_step, *current_step);
         }
-        else if (maneuverPreceededByNameChange(previous_step, current_step, next_step))
+        else if (maneuverPreceededByNameChange(previous_step, current_step, next_step) ||
+                 maneuverPreceededBySuppressedDirection(current_step, next_step))
         {
             std::cout << "Name Change" << std::endl;
             const auto strategy = AdjustToCombinedTurnStrategy(*previous_step);
@@ -384,10 +406,12 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
                               TransferSignageStrategy(),
                               NoModificationStrategy());
         }
-        else if (straightTurnFollowedByChoiceless(current_step, next_step) ||
-                 maneuverPreceededBySuppressedDirection(current_step, next_step))
+        else if (straightTurnFollowedByChoiceless(current_step, next_step))
         {
-            std::cout << "Straight By Choiceless" << std::endl;
+            std::cout << "Straight By Choiceless "
+                      << straightTurnFollowedByChoiceless(current_step, next_step) << " "
+                      << maneuverPreceededBySuppressedDirection(current_step, next_step)
+                      << std::endl;
             combineRouteSteps(*current_step,
                               *next_step,
                               AdjustToCombinedTurnStrategy(*previous_step),

@@ -41,8 +41,6 @@ bool noIntermediaryIntersections(const RouteStep &step)
 bool isCollapsableSegment(const RouteStep &step)
 {
     const auto is_short = step.distance <= MAX_COLLAPSE_DISTANCE;
-    std::cout << "Step: " << step.distance << " " << step.intersections.size() << std::endl;
-
     return is_short && noIntermediaryIntersections(step);
 }
 
@@ -316,13 +314,12 @@ bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersec
     if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
         return false;
 
-    const auto pretty_short = step_entering_intersection->distance < 0.6 * MAX_COLLAPSE_DISTANCE;
-    const auto is_turn = !hasModifier(*step_entering_intersection,DirectionModifier::Straight);
+    const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
+    const auto is_turn = !hasModifier(*step_entering_intersection, DirectionModifier::Straight);
 
     const auto followed_by_choiceless = numberOfAllowedTurns(*step_leaving_intersection) == 1;
 
-    std::cout << "BLA: " << pretty_short << " " << is_turn << " " << followed_by_choiceless << std::endl;
-    return pretty_short && is_turn && followed_by_choiceless;
+    return is_collapsable && is_turn && followed_by_choiceless;
 }
 
 bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
