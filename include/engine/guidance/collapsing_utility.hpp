@@ -100,7 +100,7 @@ inline bool haveSameMode(const RouteStep &lhs, const RouteStep &rhs)
 
 inline bool haveSameMode(const RouteStep &first, const RouteStep &second, const RouteStep &third)
 {
-    return haveSameMode(first,second) && haveSameMode(second,third);
+    return haveSameMode(first, second) && haveSameMode(second, third);
 }
 
 inline bool haveSameName(const RouteStep &lhs, const RouteStep &rhs)
@@ -118,6 +118,22 @@ inline bool haveSameName(const RouteStep &lhs, const RouteStep &rhs)
         return !util::guidance::requiresNameAnnounced(
             lhs.name, lhs.ref, lhs.pronunciation, rhs.name, rhs.ref, rhs.pronunciation);
 }
+
+inline bool areSameSide(const RouteStep &lhs, const RouteStep &rhs)
+{
+    const auto is_left = [](const RouteStep &step) {
+        return hasModifier(step, DirectionModifier::Straight) ||
+               hasLeftModifier(step.maneuver.instruction);
+    };
+
+    const auto is_right = [](const RouteStep &step) {
+        return hasModifier(step, DirectionModifier::Straight) ||
+               hasRightModifier(step.maneuver.instruction);
+    };
+
+    return (is_left(lhs) && is_left(rhs)) || (is_right(lhs) && is_right(rhs));
+}
+
 } /* namespace guidance */
 } /* namespace engine */
 } /* namespace osrm */

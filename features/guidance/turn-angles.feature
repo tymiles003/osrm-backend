@@ -150,7 +150,7 @@ Feature: Simple Turns
             | nodes   | highway      | name | lanes | oneway |
             | akb     | primary      | road | 4     | yes    |
             | hgi     | primary      | road | 4     | yes    |
-            | akcdefg | primary_link |      | 1     | yes    |
+            | kcdefg  | primary_link |      | 1     | yes    |
             | gj      | tertiary     | turn | 1     |        |
 
        When I route I should get

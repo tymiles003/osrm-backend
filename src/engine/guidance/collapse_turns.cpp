@@ -160,9 +160,22 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
     const auto angle = findTotalTurnAngle(step_at_turn_location, transfer_from_step);
     const auto new_modifier = getTurnDirection(angle);
 
-    if (hasTurnType(transfer_from_step, TurnType::NewName) ||
+    const auto transferring_from_non_turn =
+        hasTurnType(transfer_from_step, TurnType::NewName) ||
         (hasTurnType(transfer_from_step, TurnType::Turn) &&
-         hasModifier(transfer_from_step, DirectionModifier::Straight)))
+         hasModifier(transfer_from_step, DirectionModifier::Straight)) ||
+        (hasTurnType(transfer_from_step, TurnType::Continue) &&
+         hasModifier(transfer_from_step, DirectionModifier::Straight));
+
+    const auto maneuver_at_non_turn =
+        hasTurnType(step_at_turn_location, TurnType::NewName) ||
+        (hasTurnType(step_at_turn_location, TurnType::Turn) &&
+         hasModifier(step_at_turn_location, DirectionModifier::Straight)) ||
+        (hasTurnType(step_at_turn_location, TurnType::Continue) &&
+         hasModifier(step_at_turn_location, DirectionModifier::Straight)) ||
+        hasTurnType(step_at_turn_location, TurnType::Suppressed);
+
+    if (transferring_from_non_turn || maneuver_at_non_turn)
     {
         std::cout << "New name: " << transfer_from_step.name
                   << " Before: " << step_prior_to_intersection.name << " "
@@ -347,13 +360,14 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (maneuverPreceededByNameChange(previous_step, current_step, next_step))
         {
-            std::cout << "Name Change" << std::endl;
             const auto strategy = AdjustToCombinedTurnStrategy(*previous_step);
             strategy(*next_step, *current_step);
             // suppress previous step
             suppressStep(*previous_step, *current_step);
         }
-        else if (maneuverSucceededByNameChange(current_step, next_step))
+        else if (maneuverSucceededByNameChange(current_step, next_step) ||
+                 nameChangeImmediatelyAfterSuppressed(current_step, next_step) ||
+                 maneuverSucceededBySuppressedDirection(current_step, next_step))
         {
             std::cout << "Name Change After" << std::endl;
             combineRouteSteps(*current_step,
@@ -362,7 +376,8 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
                               TransferSignageStrategy(),
                               NoModificationStrategy());
         }
-        else if (straightTurnFollowedByChoiceless(current_step, next_step))
+        else if (straightTurnFollowedByChoiceless(current_step, next_step) ||
+                 maneuverPreceededBySuppressedDirection(current_step, next_step))
         {
             std::cout << "Straight By Choiceless" << std::endl;
             combineRouteSteps(*current_step,

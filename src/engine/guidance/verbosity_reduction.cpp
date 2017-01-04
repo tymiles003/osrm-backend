@@ -1,8 +1,6 @@
 #include "engine/guidance/verbosity_reduction.hpp"
 #include "engine/guidance/collapsing_utility.hpp"
 
-#include "util/debug.hpp"
-
 #include <iterator>
 
 namespace osrm
@@ -17,7 +15,6 @@ std::vector<RouteStep> suppressShortNameSegments(std::vector<RouteStep> steps)
     if (steps.empty())
         return steps;
 
-    util::guidance::print(steps);
     BOOST_ASSERT(!hasTurnType(steps.back()) && hasWaypointType(steps.back()));
     for (auto prev = steps.begin(), itr = std::next(prev); itr != steps.end(); ++itr)
     {
