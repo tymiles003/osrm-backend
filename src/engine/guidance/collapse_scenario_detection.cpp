@@ -31,14 +31,19 @@ bool isLinkroad(const RouteStep &step)
     return step.distance <= MAX_LINK_ROAD_LENGTH && step.name_id == EMPTY_NAMEID;
 }
 
+bool noIntermediaryIntersections(const RouteStep &step)
+{
+    return std::all_of(step.intersections.begin() + 1,
+                       step.intersections.end(),
+                       [](const auto &intersection) { return intersection.entry.size() == 2; });
+}
+
 bool isCollapsableSegment(const RouteStep &step)
 {
-    const auto no_intermediary_intersections = step.intersections.size() == 1;
-
     const auto is_short = step.distance <= MAX_COLLAPSE_DISTANCE;
     std::cout << "Step: " << step.distance << " " << step.intersections.size() << std::endl;
 
-    return is_short && no_intermediary_intersections;
+    return is_short && noIntermediaryIntersections(step);
 }
 
 } // namespace
@@ -93,11 +98,8 @@ bool isStaggeredIntersection(const RouteStepIterator step_prior_to_intersection,
 
     // previous step maneuver intersections should be length 1 to indicate that
     // there are no intersections between the two potentially collapsible turns
-    const auto no_intermediary_intersections =
-        step_entering_intersection->intersections.size() == 1;
-
     return is_short && (left_right || right_left) && !intermediary_mode_change &&
-           !mode_change_when_entering && no_intermediary_intersections;
+           !mode_change_when_entering && noIntermediaryIntersections(*step_entering_intersection);
 }
 
 bool isUTurn(const RouteStepIterator step_prior_to_intersection,
@@ -134,10 +136,8 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
     const auto is_short = step_entering_intersection->distance <= MAX_COLLAPSE_DISTANCE;
     const auto only_allowed_turn = numberOfAllowedTurns(*step_leaving_intersection) == 1;
 
-    const auto no_intermediary_intersections =
-        step_entering_intersection->intersections.size() == 1;
-    return no_intermediary_intersections &&
-           (is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn);
+    return (is_short || isLinkroad(*step_entering_intersection) || only_allowed_turn) &&
+           noIntermediaryIntersections(*step_entering_intersection);
 }
 
 bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
@@ -153,10 +153,16 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
             *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
         return false;
 
-    const auto are_name_changes = hasTurnType(*step_entering_intersection, TurnType::NewName) &&
-                                  (hasTurnType(*step_leaving_intersection, TurnType::NewName) ||
-                                   (hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
-                                    step_leaving_intersection->name_id == EMPTY_NAMEID));
+    const auto are_name_changes =
+        (hasTurnType(*step_entering_intersection, TurnType::NewName) ||
+         (hasTurnType(*step_entering_intersection, TurnType::Turn) &&
+          hasModifier(*step_entering_intersection, DirectionModifier::Straight))) &&
+        (hasTurnType(*step_leaving_intersection, TurnType::NewName) ||
+         (hasTurnType(*step_leaving_intersection, TurnType::Suppressed) &&
+          step_leaving_intersection->name_id == EMPTY_NAMEID) ||
+         (hasTurnType(*step_leaving_intersection, TurnType::Turn) &&
+          hasModifier(*step_leaving_intersection, DirectionModifier::Straight)));
+
     if (!are_name_changes)
         return false;
 
@@ -318,11 +324,8 @@ bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_inte
 
     const auto only_choice = numberOfAllowedTurns(*step_leaving_intersection) == 1;
 
-    const auto no_intermediary_intersections =
-        step_entering_intersection->intersections.size() == 1;
-
     return is_short && has_correct_type && is_straight && only_choice &&
-           no_intermediary_intersections;
+           noIntermediaryIntersections(*step_entering_intersection);
 }
 
 } /* namespace guidance */

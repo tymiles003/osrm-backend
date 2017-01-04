@@ -42,8 +42,8 @@ Feature: Collapse
             | nodes | highway      | name | oneway |
             | abc   | primary      | road | yes    |
             | dejfg | primary      | road | yes    |
-            | fhb   | primary_link |      |        |
-            | bie   | primary_link |      |        |
+            | fhb   | primary_link |      | yes    |
+            | bie   | primary_link |      | yes    |
 
        And the nodes
             | node | highway         |
@@ -54,7 +54,7 @@ Feature: Collapse
        When I route I should get
             | waypoints | route          | turns                        | locations |
             | a,g       | road,road,road | depart,continue uturn,arrive | a,b,g     |
-            | d,c       | road,road,road | depart,continue uturn,arrive | d,f,b     |
+            | d,c       | road,road,road | depart,continue uturn,arrive | d,f,c     |
 
     Scenario: Forking before a turn (forky)
         Given the node map
@@ -90,3 +90,24 @@ Feature: Collapse
             | a,e       | road,road,road        | depart,continue right,arrive                   | a,b,e     |
             # We should discuss whether the next item should be collapsed to depart,turn right,arrive.
             | a,f       | road,road,cross,cross | depart,continue slight right,turn right,arrive | a,b,d,f   |
+
+    Scenario: Pulled Back Turn
+        Given the node map
+            """
+                d
+				|
+            a-b-c
+			  |
+              e
+            """
+
+        And the ways
+            | nodes | highway  | name  |
+            | abc   | tertiary | road  |
+            | cd    | tertiary | left  |
+            | be    | tertiary | right |
+
+        When I route I should get
+            | waypoints | route            | turns                    |
+            | a,d       | road,left,left   | depart,turn left,arrive  |
+            | a,e       | road,right,right | depart,turn right,arrive |

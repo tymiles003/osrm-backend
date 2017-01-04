@@ -532,25 +532,6 @@ Feature: Collapse
             | waypoints | route     | turns         |
             | a,d       | road,road | depart,arrive |
 
-    Scenario: Pulled Back Turn
-        Given the node map
-            """
-                d
-            a b c
-              e
-            """
-
-        And the ways
-            | nodes | highway  | name  |
-            | abc   | tertiary | road  |
-            | cd    | tertiary | left  |
-            | be    | tertiary | right |
-
-        When I route I should get
-            | waypoints | route            | turns                    |
-            | a,d       | road,left,left   | depart,turn left,arrive  |
-            | a,e       | road,right,right | depart,turn right,arrive |
-
     Scenario: No Name During Turns, keep important turns
         Given the node map
             """
@@ -742,7 +723,7 @@ Feature: Collapse
 
         When I route I should get
             | waypoints | route                 | turns                                      | locations |
-            | a,g       | road,cross,cross      | depart,fork left,arrive                    | a,b,g     |
+            | a,g       | road,cross,cross      | depart,fork slight left,arrive             | a,b,g     |
             | a,e       | road,road,road        | depart,fork slight right,arrive            | a,b,e     |
             | a,f       | road,road,cross,cross | depart,fork slight right,turn right,arrive | a,b,d,f   |
 
@@ -958,8 +939,8 @@ Feature: Collapse
             | ef    | secondary |                | down  | yes    |
 
         When I route I should get
-            | waypoints | route         | turns                                     | locations |
-            | a,1       | up,turn,down, | depart,turn right,turn sharp right,arrive | a,b,e,_   |
+            | waypoints | route         | turns                               | locations |
+            | a,1       | up,turn,down, | depart,turn right,turn right,arrive | a,b,e,_   |
 
     #http://www.openstreetmap.org/#map=19/52.48778/13.30024
     Scenario: Hohenzollerdammbrücke

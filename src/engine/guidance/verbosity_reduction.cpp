@@ -23,6 +23,7 @@ std::vector<RouteStep> suppressShortNameSegments(std::vector<RouteStep> steps)
 
         if (hasTurnType(*itr, TurnType::NewName) && haveSameMode(*prev, *itr) && !hasLanes(*itr))
         {
+            std::cout << "Found Name: " << itr->name << " " << prev->name << std::endl;
             const auto name = itr;
             if (haveSameName(*prev, *itr))
             {
@@ -34,13 +35,13 @@ std::vector<RouteStep> suppressShortNameSegments(std::vector<RouteStep> steps)
                 std::cout << "Names: " << prev->name << " " << itr->name << std::endl;
                 auto distance = itr->distance;
                 // sum up all distances that can be relevant to the name change
-                ++itr;
-                while (!hasWaypointType(*itr) &&
-                       (!hasTurnType(*itr) || hasTurnType(*itr, TurnType::Suppressed)) &&
-                       distance < NAME_SEGMENT_CUTOFF_LENGTH)
+                while (
+                    !hasWaypointType(*(itr + 1)) &&
+                    (!hasTurnType(*(itr + 1)) || hasTurnType(*(itr + 1), TurnType::Suppressed)) &&
+                    distance < NAME_SEGMENT_CUTOFF_LENGTH)
                 {
-                    distance += itr->distance;
                     ++itr;
+                    distance += itr->distance;
                 }
 
                 if (distance < NAME_SEGMENT_CUTOFF_LENGTH)

@@ -112,7 +112,6 @@ inline void handleSliproad(RouteStepIterator sliproad_step)
     {
         const auto previous_step = findPreviousTurn(sliproad_step);
         const auto connecting_same_name_roads = haveSameName(*previous_step, *next_step);
-        std::cout << "Found to be the same" << std::endl;
         auto sliproad_turn_type = connecting_same_name_roads ? TurnType::Continue : TurnType::Turn;
         setInstructionType(*sliproad_step, sliproad_turn_type);
         combineRouteSteps(*sliproad_step,
@@ -360,6 +359,7 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (maneuverPreceededByNameChange(previous_step, current_step, next_step))
         {
+            std::cout << "Name Change" << std::endl;
             const auto strategy = AdjustToCombinedTurnStrategy(*previous_step);
             strategy(*next_step, *current_step);
             // suppress previous step

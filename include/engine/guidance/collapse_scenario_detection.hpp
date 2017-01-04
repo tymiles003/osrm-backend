@@ -36,9 +36,6 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
 bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
                        const RouteStepIterator step_entering_intersection,
                        const RouteStepIterator step_leaving_intersection);
-// detect name changes from a to a resulting from empty name strings
-bool isIdentityNameChange(const RouteStepIterator step_prior_to_intersection,
-                          const RouteStepIterator step_entering_intersection);
 
 // Sometimes, segments names don't match the perceived turns. We try to detect these additional
 // name changes and issue a combined turn.
