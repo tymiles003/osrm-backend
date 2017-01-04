@@ -367,7 +367,7 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
             std::cout << "Straight By Choiceless" << std::endl;
             combineRouteSteps(*current_step,
                               *next_step,
-                              AdjustToCombinedTurnAngleStrategy(),
+                              AdjustToCombinedTurnStrategy(*previous_step),
                               TransferSignageStrategy(),
                               NoModificationStrategy());
         }
