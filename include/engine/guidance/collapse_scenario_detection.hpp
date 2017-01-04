@@ -58,6 +58,8 @@ bool maneuverSucceededBySuppressedDirection(const RouteStepIterator step_enterin
                                             const RouteStepIterator step_leaving_intersection);
 bool nameChangeImmediatelyAfterSuppressed(const RouteStepIterator step_entering_intersection,
                                           const RouteStepIterator step_leaving_intersection);
+bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersection,
+                                  const RouteStepIterator step_leaving_intersection);
 
 // Due to obvious detection, sometimes we can have straight turns followed by a different turn right
 // next to each other. We combine both turns into one, if the second turn is without choice

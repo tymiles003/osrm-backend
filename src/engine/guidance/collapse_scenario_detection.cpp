@@ -306,6 +306,25 @@ bool nameChangeImmediatelyAfterSuppressed(const RouteStepIterator step_entering_
     return very_short && correct_types;
 }
 
+bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersection,
+                                  const RouteStepIterator step_leaving_intersection)
+{
+    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
+        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
+        return false;
+
+    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+        return false;
+
+    const auto pretty_short = step_entering_intersection->distance < 0.6 * MAX_COLLAPSE_DISTANCE;
+    const auto is_turn = !hasModifier(*step_entering_intersection,DirectionModifier::Straight);
+
+    const auto followed_by_choiceless = numberOfAllowedTurns(*step_leaving_intersection) == 1;
+
+    std::cout << "BLA: " << pretty_short << " " << is_turn << " " << followed_by_choiceless << std::endl;
+    return pretty_short && is_turn && followed_by_choiceless;
+}
+
 bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
                                       const RouteStepIterator step_leaving_intersection)
 {

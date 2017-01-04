@@ -215,6 +215,13 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
             step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
         }
     }
+    else if (hasTurnType(step_at_turn_location, TurnType::Turn) &&
+             hasTurnType(transfer_from_step, TurnType::Turn))
+    {
+        if (haveSameName(step_prior_to_intersection, transfer_from_step))
+            setInstructionType(step_at_turn_location, TurnType::Continue);
+        step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+    }
     else
     {
         step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
@@ -367,7 +374,8 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (maneuverSucceededByNameChange(current_step, next_step) ||
                  nameChangeImmediatelyAfterSuppressed(current_step, next_step) ||
-                 maneuverSucceededBySuppressedDirection(current_step, next_step))
+                 maneuverSucceededBySuppressedDirection(current_step, next_step) ||
+                 closeChoicelessTurnAfterTurn(current_step, next_step))
         {
             std::cout << "Name Change After" << std::endl;
             combineRouteSteps(*current_step,

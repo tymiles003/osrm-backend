@@ -87,7 +87,7 @@ Feature: Collapse
         When I route I should get
             | waypoints | route                 | turns                                          | locations |
             | a,g       | road,cross,cross      | depart,turn left,arrive                        | a,b,g     |
-            | a,e       | road,road,road        | depart,continue right,arrive                   | a,b,e     |
+            | a,e       | road,road,road        | depart,continue slight right,arrive            | a,b,e     |
             # We should discuss whether the next item should be collapsed to depart,turn right,arrive.
             | a,f       | road,road,cross,cross | depart,continue slight right,turn right,arrive | a,b,d,f   |
 
