@@ -4,6 +4,8 @@
 #include <boost/interprocess/sync/named_condition.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 
+#include "util/retry_lock.hpp"
+
 namespace osrm
 {
 namespace storage
@@ -22,6 +24,11 @@ struct SharedBarriers
     {
         boost::interprocess::named_mutex::remove("osrm-region");
         boost::interprocess::named_condition::remove("osrm-region-cv");
+    }
+
+    static RetryLock getLockWithRetry(int timeout_seconds)
+    {
+        return RetryLock(timeout_seconds, "osrm-region");
     }
 
     boost::interprocess::named_mutex region_mutex;

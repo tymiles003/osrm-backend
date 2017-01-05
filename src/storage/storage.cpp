@@ -1,4 +1,3 @@
-#include "storage/storage.hpp"
 #include "contractor/query_edge.hpp"
 #include "extractor/compressed_edge_container.hpp"
 #include "extractor/guidance/turn_instruction.hpp"
@@ -11,6 +10,7 @@
 #include "storage/shared_barriers.hpp"
 #include "storage/shared_datatype.hpp"
 #include "storage/shared_memory.hpp"
+#include "storage/storage.hpp"
 #include "engine/datafacade/datafacade_base.hpp"
 #include "util/coordinate.hpp"
 #include "util/exception.hpp"
@@ -28,13 +28,6 @@
 #ifdef __linux__
 #include <sys/mman.h>
 #endif
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/interprocess/exceptions.hpp>
-#include <boost/interprocess/sync/named_sharable_mutex.hpp>
-#include <boost/interprocess/sync/named_upgradable_mutex.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/upgradable_lock.hpp>
 
 #include <cstdint>
 
@@ -54,84 +47,89 @@ using RTreeNode =
     util::StaticRTree<RTreeLeaf, util::ShM<util::Coordinate, true>::vector, true>::TreeNode;
 using QueryGraph = util::StaticGraph<contractor::QueryEdge::EdgeData>;
 
-Storage::Storage(StorageConfig config_)
-    : config(std::move(config_))
-    , datastore_mutex(boost::interprocess::open_or_create, "osrm-datastore")
-{}
+Storage::Storage(StorageConfig config_) : config(std::move(config_)) {}
 
-int Storage::Run()
+int Storage::Run(int max_wait)
 {
     BOOST_ASSERT_MSG(config.IsValid(), "Invalid storage config");
 
     util::LogPolicy::GetInstance().Unmute();
 
-    // Lock datastore for binary exclusive read and write access
-    boost::interprocess::scoped_lock<boost::interprocess::named_mutex>
-        datastore_lock(datastore_mutex);
+    RetryLock datastore_lock(max_wait, "datastore-lock");
 
-    SharedBarriers barriers;
-
+    if (!datastore_lock.TryLock())
     {
-#ifdef __linux__
-        // try to disable swapping on Linux
-        const bool lock_flags = MCL_CURRENT | MCL_FUTURE;
-        if (-1 == mlockall(lock_flags))
-        {
-            util::Log(logWARNING) << "Could not request RAM lock";
-        }
-#endif
-
-        // Get the next region ID and time stamp without locking shared barriers.
-        // Because of datastore_lock the only write operation can occur sequentially later.
-        auto next_region = REGION_1;
-        unsigned next_timestamp = 1;
-        if (SharedMemory::RegionExists(CURRENT_REGION))
-        {
-            auto shared_memory = makeSharedMemory(CURRENT_REGION);
-            auto current_region = static_cast<SharedDataTimestamp *>(shared_memory->Ptr());
-            next_region = current_region->region == REGION_1 ? REGION_2 : REGION_1;
-            next_timestamp = current_region->timestamp + 1;
-        }
-
-        // SHMCTL(2): Mark the segment to be destroyed. The segment will actually be destroyed
-        // only after the last process detaches it.
-        if (storage::SharedMemory::RegionExists(next_region))
-        {
-            storage::SharedMemory::Remove(next_region);
-        }
-
-        util::Log() << "Loading data into " << regionToString(next_region) << " timestamp " << next_timestamp;
-
-        // Populate a memory layout into stack memory
-        DataLayout layout;
-        PopulateLayout(layout);
-
-        // Allocate shared memory block
-        auto regions_size = sizeof(layout) + layout.GetSizeOfLayout();
-        util::Log() << "Allocating shared memory of " << regions_size << " bytes";
-        auto data_memory = makeSharedMemory(next_region, regions_size);
-
-        // Copy memory layout to shared memory and populate data
-        char *shared_memory_ptr = static_cast<char *>(data_memory->Ptr());
-        memcpy(shared_memory_ptr, &layout, sizeof(layout));
-        PopulateData(layout, shared_memory_ptr + sizeof(layout));
-
-        {   // Lock for write access shared region mutex that protects CURRENT_REGION
-            boost::interprocess::scoped_lock<boost::interprocess::named_mutex>
-                current_region_lock(barriers.region_mutex);
-
-            // Get write access to CURRENT_REGION
-            auto shared_memory = makeSharedMemory(CURRENT_REGION, sizeof(SharedDataTimestamp));
-            auto current_region = static_cast<SharedDataTimestamp *>(shared_memory->Ptr());
-
-            // Update the current region ID and timestamp
-            current_region->region = next_region;
-            current_region->timestamp = next_timestamp;
-        }
-
-        util::Log() << "All data loaded.";
+        util::Log(logWARNING) << "Could not aquire current region lock after " << max_wait
+                              << " seconds. Claiming the lock by force.";
+        datastore_lock.ForceLock();
     }
 
+#ifdef __linux__
+    // try to disable swapping on Linux
+    const bool lock_flags = MCL_CURRENT | MCL_FUTURE;
+    if (-1 == mlockall(lock_flags))
+    {
+        util::Log(logWARNING) << "Could not request RAM lock";
+    }
+#endif
+
+    // Get the next region ID and time stamp without locking shared barriers.
+    // Because of datastore_lock the only write operation can occur sequentially later.
+    auto next_region = REGION_1;
+    unsigned next_timestamp = 1;
+    if (SharedMemory::RegionExists(CURRENT_REGION))
+    {
+        auto shared_memory = makeSharedMemory(CURRENT_REGION);
+        auto current_region = static_cast<SharedDataTimestamp *>(shared_memory->Ptr());
+        next_region = current_region->region == REGION_1 ? REGION_2 : REGION_1;
+        next_timestamp = current_region->timestamp + 1;
+    }
+
+    // SHMCTL(2): Mark the segment to be destroyed. The segment will actually be destroyed
+    // only after the last process detaches it.
+    if (storage::SharedMemory::RegionExists(next_region))
+    {
+        storage::SharedMemory::Remove(next_region);
+    }
+
+    util::Log() << "Loading data into " << regionToString(next_region) << " timestamp "
+                << next_timestamp;
+
+    // Populate a memory layout into stack memory
+    DataLayout layout;
+    PopulateLayout(layout);
+
+    // Allocate shared memory block
+    auto regions_size = sizeof(layout) + layout.GetSizeOfLayout();
+    util::Log() << "Allocating shared memory of " << regions_size << " bytes";
+    auto data_memory = makeSharedMemory(next_region, regions_size);
+
+    // Copy memory layout to shared memory and populate data
+    char *shared_memory_ptr = static_cast<char *>(data_memory->Ptr());
+    memcpy(shared_memory_ptr, &layout, sizeof(layout));
+    PopulateData(layout, shared_memory_ptr + sizeof(layout));
+
+    SharedBarriers barriers;
+    { // Lock for write access shared region mutex that protects CURRENT_REGION
+        RetryLock current_region_lock = barriers.getLockWithRetry(max_wait);
+
+        if (!current_region_lock.TryLock())
+        {
+            util::Log(logWARNING) << "Could not aquire current region lock after " << max_wait
+                                  << " seconds. Claiming the lock by force.";
+            current_region_lock.ForceLock();
+        }
+
+        // Get write access to CURRENT_REGION
+        auto shared_memory = makeSharedMemory(CURRENT_REGION, sizeof(SharedDataTimestamp));
+        auto current_region = static_cast<SharedDataTimestamp *>(shared_memory->Ptr());
+
+        // Update the current region ID and timestamp
+        current_region->region = next_region;
+        current_region->timestamp = next_timestamp;
+    }
+
+    util::Log() << "All data loaded.";
     barriers.region_condition.notify_all();
 
     return EXIT_SUCCESS;
