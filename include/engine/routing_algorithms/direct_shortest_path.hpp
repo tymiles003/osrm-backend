@@ -25,9 +25,9 @@ namespace routing_algorithms
 /// not fully contracted graphs.
 template <class DataFacadeT>
 class DirectShortestPathRouting final
-    : public BasicRoutingInterface<DataFacadeT, DirectShortestPathRouting<DataFacadeT>>
+    : public BasicRoutingInterface<DataFacadeT>
 {
-    using super = BasicRoutingInterface<DataFacadeT, DirectShortestPathRouting<DataFacadeT>>;
+    using super = BasicRoutingInterface<DataFacadeT>;
     using QueryHeap = SearchEngineData::QueryHeap;
     SearchEngineData &engine_working_data;
 

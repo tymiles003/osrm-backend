@@ -27,9 +27,9 @@ const double VIAPATH_GAMMA = 0.75;   // alternative shares at most 75% with the 
 
 template <class DataFacadeT>
 class AlternativeRouting final
-    : private BasicRoutingInterface<DataFacadeT, AlternativeRouting<DataFacadeT>>
+    : private BasicRoutingInterface<DataFacadeT>
 {
-    using super = BasicRoutingInterface<DataFacadeT, AlternativeRouting<DataFacadeT>>;
+    using super = BasicRoutingInterface<DataFacadeT>;
     using EdgeData = typename DataFacadeT::EdgeData;
     using QueryHeap = SearchEngineData::QueryHeap;
     using SearchSpaceEdge = std::pair<NodeID, NodeID>;
