@@ -61,14 +61,19 @@ class DataWatchdog
 
     void Run()
     {
-        boost::interprocess::scoped_lock<boost::interprocess::named_mutex>
-            current_region_lock(barrier.region_mutex);
-
         auto shared_memory = makeSharedMemory(storage::CURRENT_REGION);
         auto current = static_cast<storage::SharedDataTimestamp *>(shared_memory->Ptr());
 
         while (active)
         {
+            boost::interprocess::scoped_lock<boost::interprocess::named_mutex>
+                current_region_lock(barrier.region_mutex);
+
+            while (active && timestamp == current->timestamp)
+            {
+                barrier.region_condition.wait(current_region_lock);
+            }
+
             if (timestamp != current->timestamp)
             {
                 facade = std::make_shared<datafacade::SharedMemoryDataFacade>(current->region);
@@ -76,11 +81,7 @@ class DataWatchdog
                 util::Log() << "updated facade to region " << storage::regionToString(current->region)
                             << " with timestamp " << current->timestamp;
             }
-
-            barrier.region_condition.wait(current_region_lock);
         }
-
-        facade.reset();
 
         util::Log() << "DataWatchdog thread stopped";
     }
