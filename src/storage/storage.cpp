@@ -109,7 +109,6 @@ int Storage::Run(int max_wait)
         util::UnbufferedLog() << " ok.";
     }
 
-
     util::Log() << "Loading data into " << regionToString(next_region) << " timestamp "
                 << next_timestamp;
 
