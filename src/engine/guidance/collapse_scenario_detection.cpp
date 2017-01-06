@@ -46,6 +46,26 @@ bool isCollapsableSegment(const RouteStep &step)
 
 } // namespace
 
+bool basicCollapsePreconditions(const RouteStepIterator first, const RouteStepIterator second)
+{
+    const auto has_roundabout_type = hasRoundaboutType(first->maneuver.instruction) ||
+                                     hasRoundaboutType(second->maneuver.instruction);
+
+    return !has_roundabout_type && haveSameMode(*first, *second);
+}
+
+bool basicCollapsePreconditions(const RouteStepIterator first,
+                                const RouteStepIterator second,
+                                const RouteStepIterator third)
+{
+    const auto has_roundabout_type = hasRoundaboutType(first->maneuver.instruction) ||
+                                     hasRoundaboutType(second->maneuver.instruction) ||
+                                     hasRoundaboutType(third->maneuver.instruction);
+
+    // require modes to match up
+    return !has_roundabout_type && haveSameMode(*first, *second, *third);
+}
+
 bool isStaggeredIntersection(const RouteStepIterator step_prior_to_intersection,
                              const RouteStepIterator step_entering_intersection,
                              const RouteStepIterator step_leaving_intersection)
@@ -104,14 +124,8 @@ bool isUTurn(const RouteStepIterator step_prior_to_intersection,
              const RouteStepIterator step_entering_intersection,
              const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_prior_to_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    // require modes to match up
-    if (!haveSameMode(
-            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(
+            step_prior_to_intersection, step_entering_intersection, step_leaving_intersection))
         return false;
 
     const bool takes_u_turn = bearingsAreReversed(
@@ -142,13 +156,8 @@ bool isNameOszillation(const RouteStepIterator step_prior_to_intersection,
                        const RouteStepIterator step_entering_intersection,
                        const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_prior_to_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(
-            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(
+            step_prior_to_intersection, step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto are_name_changes =
@@ -175,13 +184,8 @@ bool maneuverPreceededByNameChange(const RouteStepIterator step_prior_to_interse
                                    const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
-    // TODO refactor to not replicate this all the time
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(
-            *step_prior_to_intersection, *step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(
+            step_prior_to_intersection, step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
@@ -201,11 +205,7 @@ bool maneuverPreceededByNameChange(const RouteStepIterator step_prior_to_interse
 bool maneuverPreceededBySuppressedDirection(const RouteStepIterator step_entering_intersection,
                                             const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
@@ -230,11 +230,7 @@ bool maneuverPreceededBySuppressedDirection(const RouteStepIterator step_enterin
 bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
@@ -262,11 +258,7 @@ bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_interse
 bool maneuverSucceededBySuppressedDirection(const RouteStepIterator step_entering_intersection,
                                             const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
@@ -290,11 +282,7 @@ bool maneuverSucceededBySuppressedDirection(const RouteStepIterator step_enterin
 bool nameChangeImmediatelyAfterSuppressed(const RouteStepIterator step_entering_intersection,
                                           const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto very_short = step_entering_intersection->distance < 0.25 * MAX_COLLAPSE_DISTANCE;
@@ -307,11 +295,7 @@ bool nameChangeImmediatelyAfterSuppressed(const RouteStepIterator step_entering_
 bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersection,
                                   const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_collapsable = isCollapsableSegment(*step_entering_intersection);
@@ -322,14 +306,28 @@ bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersec
     return is_collapsable && is_turn && followed_by_choiceless;
 }
 
+bool doubleChoiceless(const RouteStepIterator step_entering_intersection,
+                      const RouteStepIterator step_leaving_intersection)
+{
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
+        return false;
+
+    const auto double_choiceless =
+        (numberOfAllowedTurns(*step_leaving_intersection) == 1) &&
+        (step_entering_intersection->intersections.size() == 2) &&
+        (std::count(step_entering_intersection->intersections.back().entry.begin(),
+                    step_entering_intersection->intersections.back().entry.end(),
+                    true) == 1);
+
+    const auto short_enough = step_entering_intersection->distance < 1.5 * MAX_COLLAPSE_DISTANCE;
+
+    return double_choiceless && short_enough;
+}
+
 bool straightTurnFollowedByChoiceless(const RouteStepIterator step_entering_intersection,
                                       const RouteStepIterator step_leaving_intersection)
 {
-    if (hasRoundaboutType(step_entering_intersection->maneuver.instruction) ||
-        hasRoundaboutType(step_leaving_intersection->maneuver.instruction))
-        return false;
-
-    if (!haveSameMode(*step_entering_intersection, *step_leaving_intersection))
+    if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
         return false;
 
     const auto is_short = step_entering_intersection->distance <= 2 * MAX_COLLAPSE_DISTANCE;

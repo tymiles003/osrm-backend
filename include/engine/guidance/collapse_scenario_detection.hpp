@@ -11,6 +11,13 @@ namespace engine
 namespace guidance
 {
 
+// check basic collapse preconditions (mode ok, no roundabout);
+bool basicCollapsePreconditions(const RouteStepIterator first, const RouteStepIterator second);
+
+bool basicCollapsePreconditions(const RouteStepIterator first,
+                                const RouteStepIterator second,
+                                const RouteStepIterator third);
+
 // Staggered intersection are very short zig-zags of a few meters.
 // We do not want to announce these short left-rights or right-lefts:
 // 
@@ -60,6 +67,10 @@ bool nameChangeImmediatelyAfterSuppressed(const RouteStepIterator step_entering_
                                           const RouteStepIterator step_leaving_intersection);
 bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersection,
                                   const RouteStepIterator step_leaving_intersection);
+// if modelled turn roads meet in the center of a segregated intersection, we can end up with double
+// choiceless turns
+bool doubleChoiceless(const RouteStepIterator step_entering_intersection,
+                      const RouteStepIterator step_leaving_intersection);
 
 // Due to obvious detection, sometimes we can have straight turns followed by a different turn right
 // next to each other. We combine both turns into one, if the second turn is without choice

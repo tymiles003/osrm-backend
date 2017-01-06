@@ -422,6 +422,33 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         {
             std::cout << "No Collapse Scenario Triggers" << std::endl;
         }
+        // if the current collapsing triggers, we can check advanced scenarios
+        const auto new_next_step = findNextTurn(current_step);
+        if (doubleChoiceless(current_step, new_next_step))
+        {
+            std::cout << "Double Choiceless" << std::endl;
+            combineRouteSteps(*current_step,
+                              *new_next_step,
+                              AdjustToCombinedTurnStrategy(*previous_step),
+                              TransferSignageStrategy(),
+                              NoModificationStrategy());
+        }
+        if (!hasWaypointType(*previous_step))
+        {
+            const auto far_back_step = findPreviousTurn(previous_step);
+            // due to name changes, we can find u-turns a bit late. Thats why we check far back as
+            // well
+            if (isUTurn(far_back_step, previous_step, current_step))
+            {
+                std::cout << "Uturn (far back)" << std::endl;
+                combineRouteSteps(
+                    *previous_step,
+                    *current_step,
+                    SetFixedInstructionStrategy({TurnType::Continue, DirectionModifier::UTurn}),
+                    TransferSignageStrategy(),
+                    NoModificationStrategy());
+            }
+        }
     }
     return steps;
 }
