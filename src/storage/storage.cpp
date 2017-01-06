@@ -55,7 +55,7 @@ int Storage::Run(int max_wait)
 
     util::LogPolicy::GetInstance().Unmute();
 
-    RetryLock datastore_lock(max_wait, "datastore-lock");
+    RetryLock datastore_lock(max_wait, "osrm-datastore-lock");
 
     if (!datastore_lock.TryLock())
     {
