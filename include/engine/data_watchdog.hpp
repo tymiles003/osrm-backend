@@ -31,6 +31,12 @@ class DataWatchdog
         , timestamp(0)
     {
         watcher = std::thread(&DataWatchdog::Run, this);
+        while (!facade)
+        {
+            BOOST_ASSERT(active);
+            // wait until we have generated a facade
+            // this will only take a few cycles or fail hard
+        }
     }
 
     ~DataWatchdog()
