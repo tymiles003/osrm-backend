@@ -229,6 +229,11 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
             step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
         }
     }
+    else if(hasTurnType(transfer_from_step,TurnType::OnRamp))
+    {
+        setInstructionType(step_at_turn_location, TurnType::OnRamp);
+        step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
+    }
     else if (hasTurnType(step_at_turn_location, TurnType::Turn) &&
              hasTurnType(transfer_from_step, TurnType::Turn))
     {

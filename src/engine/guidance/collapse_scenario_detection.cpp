@@ -51,7 +51,9 @@ bool basicCollapsePreconditions(const RouteStepIterator first, const RouteStepIt
     const auto has_roundabout_type = hasRoundaboutType(first->maneuver.instruction) ||
                                      hasRoundaboutType(second->maneuver.instruction);
 
-    return !has_roundabout_type && haveSameMode(*first, *second);
+    const auto waypoint_type = hasWaypointType(*first) || hasWaypointType(*second);
+
+    return !has_roundabout_type && !waypoint_type && haveSameMode(*first, *second);
 }
 
 bool basicCollapsePreconditions(const RouteStepIterator first,
