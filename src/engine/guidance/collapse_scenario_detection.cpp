@@ -229,6 +229,38 @@ bool maneuverPreceededBySuppressedDirection(const RouteStepIterator step_enterin
            keeps_direction;
 }
 
+bool suppressedStraightBetweenTurns(const RouteStepIterator step_entering_intersection,
+                                    const RouteStepIterator step_at_center_of_intersection,
+                                    const RouteStepIterator step_leaving_intersection)
+{
+    if (!basicCollapsePreconditions(
+            step_entering_intersection, step_at_center_of_intersection, step_leaving_intersection))
+        return false;
+
+    const auto both_short_enough =
+        step_entering_intersection->distance < 0.8 * MAX_COLLAPSE_DISTANCE &&
+        step_at_center_of_intersection->distance < 0.8 * MAX_COLLAPSE_DISTANCE;
+
+    const auto similar_length =
+        (step_entering_intersection->distance < 5 &&
+         step_at_center_of_intersection->distance < 5) ||
+        std::min(step_entering_intersection->distance, step_at_center_of_intersection->distance) /
+                std::max(step_entering_intersection->distance,
+                         step_at_center_of_intersection->distance) >
+            0.75;
+
+    const auto correct_types =
+        hasTurnType(*step_at_center_of_intersection, TurnType::Suppressed) &&
+        hasModifier(*step_at_center_of_intersection, DirectionModifier::Straight) &&
+        (hasTurnType(*step_entering_intersection, TurnType::Turn) ||
+         hasTurnType(*step_entering_intersection, TurnType::Continue)) &&
+        (hasTurnType(*step_leaving_intersection, TurnType::Turn) ||
+         hasTurnType(*step_leaving_intersection, TurnType::Continue) ||
+         hasTurnType(*step_leaving_intersection, TurnType::OnRamp));
+
+    return both_short_enough && similar_length && correct_types;
+}
+
 bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
@@ -251,9 +283,6 @@ bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_interse
         hasModifier(*step_leaving_intersection, DirectionModifier::Straight) &&
         step_entering_intersection->distance <= 1.5 * MAX_COLLAPSE_DISTANCE;
 
-    std::cout << "Check: " << is_collapsable << " " << followed_by_name_change << " " << is_maneuver
-              << std::endl;
-
     return (is_collapsable || is_strong_name_change) && followed_by_name_change && is_maneuver;
 }
 
@@ -274,9 +303,6 @@ bool maneuverSucceededBySuppressedDirection(const RouteStepIterator step_enterin
 
     const auto keeps_direction =
         areSameSide(*step_entering_intersection, *step_leaving_intersection);
-
-    std::cout << "Check: " << is_collapsable << " " << followed_by_suppressed_direction << " "
-              << is_maneuver << " " << keeps_direction << std::endl;
 
     return is_collapsable && followed_by_suppressed_direction && is_maneuver && keeps_direction;
 }
@@ -304,8 +330,10 @@ bool closeChoicelessTurnAfterTurn(const RouteStepIterator step_entering_intersec
     const auto is_turn = !hasModifier(*step_entering_intersection, DirectionModifier::Straight);
 
     const auto followed_by_choiceless = numberOfAllowedTurns(*step_leaving_intersection) == 1;
+    const auto followed_by_suppressed =
+        hasTurnType(*step_leaving_intersection, TurnType::Suppressed);
 
-    return is_collapsable && is_turn && followed_by_choiceless;
+    return is_collapsable && is_turn && followed_by_choiceless && !followed_by_suppressed;
 }
 
 bool doubleChoiceless(const RouteStepIterator step_entering_intersection,

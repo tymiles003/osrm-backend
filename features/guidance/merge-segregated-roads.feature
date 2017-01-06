@@ -501,25 +501,25 @@ Feature: Merge Segregated Roads
             | jc    | vert  | yes    |
             | cf    | vert  | yes    |
             | fl    | vert  | yes    |
-            | gx    | horiz | no     |
+            | xg    | horiz | no     |
             | xc    | horiz | no     |
-            | fx    | horiz | no     |
+            | xf    | horiz | no     |
             | xb    | horiz | no     |
         And the relations
-            | type        | way:from | way:to | node:via | restriction  |
-            | restriction | bc       | cf     | c        | no_left_turn |
-            | restriction | fg       | gb     | g        | no_left_turn |
-            | restriction | cf       | fg     | f        | no_left_turn |
-            | restriction | gb       | bc     | b        | no_left_turn |
-            | restriction | xb       | bc     | b        | no_left_turn |
-            | restriction | xc       | cf     | c        | no_left_turn |
-            | restriction | xf       | fg     | f        | no_left_turn |
-            | restriction | xg       | gb     | g        | no_left_turn |
+            | type        | way:from | way:to | node:via | restriction      |
+            | restriction | bc       | cf     | c        | no_left_turn     |
+            | restriction | fg       | gb     | g        | no_left_turn     |
+            | restriction | gb       | bc     | b        | no_left_turn     |
+            | restriction | cf       | fg     | f        | no_left_turn     |
+            | restriction | xb       | xf     | x        | only_straight_on |
+            | restriction | xf       | xb     | x        | only_straight_on |
+            | restriction | xg       | xc     | x        | only_straight_on |
+            | restriction | xc       | xg     | x        | only_straight_on |
 
         # the goal here should be not to mention the intersection in the middle at all and also suppress the segregated parts
         When I route I should get
-            | waypoints | route            | intersections																																   |
-            | a,l       | horiz,vert,vert  | true:90;false:0 true:60 true:90 true:180 false:270,true:60 true:120 false:240 true:300,true:0 false:90 false:180 false:240 false:270;true:180 |
-            | a,d       | horiz,horiz      | true:90,false:0 true:60 true:90 true:180 false:270,false:0 true:90 false:180 false:270 true:300;true:270									   |
-            | j,h       | vert,horiz,horiz | true:0;true:0 true:90 false:180 false:270 true:300,true:60 false:120 true:240 true:300,false:0 false:90 false:120 false:180 true:270;true:90  |
-            | j,l       | vert,vert        | true:0,true:0 true:90 false:180 false:270 true:300,true:0 false:90 false:180 true:240 false:270;true:180									   |
+            | waypoints | route            | intersections																																    |
+            | a,l       | horiz,vert,vert  | true:90;false:0 true:60 true:90 true:180 false:270,true:60 false:120 false:240 false:300,true:0 false:90 false:180 false:240 true:270;true:180 |
+            | a,d       | horiz,horiz      | true:90,false:0 true:60 true:90 true:180 false:270,false:0 true:90 false:180 false:270 true:300;true:270									    |
+            | j,h       | vert,horiz,horiz | true:0;true:0 true:90 false:180 false:270 true:300,false:60 false:120 false:240 true:300,false:0 false:90 false:120 true:180 true:270;true:90  |
+            | j,l       | vert,vert        | true:0,true:0 true:90 false:180 false:270 true:300,true:0 false:90 false:180 true:240 false:270;true:180									    |

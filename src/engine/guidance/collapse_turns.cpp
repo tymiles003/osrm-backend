@@ -229,7 +229,7 @@ void AdjustToCombinedTurnStrategy::operator()(RouteStep &step_at_turn_location,
             step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
         }
     }
-    else if(hasTurnType(transfer_from_step,TurnType::OnRamp))
+    else if (hasTurnType(transfer_from_step, TurnType::OnRamp))
     {
         setInstructionType(step_at_turn_location, TurnType::OnRamp);
         step_at_turn_location.maneuver.instruction.direction_modifier = new_modifier;
@@ -404,6 +404,10 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
                  maneuverSucceededBySuppressedDirection(current_step, next_step) ||
                  closeChoicelessTurnAfterTurn(current_step, next_step))
         {
+            std::cout << "Detectors: " << maneuverSucceededByNameChange(current_step, next_step)
+                      << " " << nameChangeImmediatelyAfterSuppressed(current_step, next_step) << " "
+                      << maneuverSucceededBySuppressedDirection(current_step, next_step) << " "
+                      << closeChoicelessTurnAfterTurn(current_step, next_step) << std::endl;
             std::cout << "Name Change After" << std::endl;
             combineRouteSteps(*current_step,
                               *next_step,
@@ -420,6 +424,18 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
             combineRouteSteps(*current_step,
                               *next_step,
                               AdjustToCombinedTurnStrategy(*previous_step),
+                              TransferSignageStrategy(),
+                              NoModificationStrategy());
+        }
+        else if (suppressedStraightBetweenTurns(previous_step, current_step, next_step))
+        {
+            std::cout << "Suppressed Straight between turns" << std::endl;
+            const auto far_back_step = findPreviousTurn(previous_step);
+            previous_step->ElongateBy(*current_step);
+            current_step->Invalidate();
+            combineRouteSteps(*previous_step,
+                              *next_step,
+                              AdjustToCombinedTurnStrategy(*far_back_step),
                               TransferSignageStrategy(),
                               NoModificationStrategy());
         }
