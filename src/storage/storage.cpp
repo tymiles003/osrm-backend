@@ -77,20 +77,38 @@ int Storage::Run(int max_wait)
     // Because of datastore_lock the only write operation can occur sequentially later.
     auto next_region = REGION_1;
     unsigned next_timestamp = 1;
+    auto in_use_region = REGION_NONE;
+    unsigned in_use_timestamp = 0;
     if (SharedMemory::RegionExists(CURRENT_REGION))
     {
         auto shared_memory = makeSharedMemory(CURRENT_REGION);
         auto current_region = static_cast<SharedDataTimestamp *>(shared_memory->Ptr());
-        next_region = current_region->region == REGION_1 ? REGION_2 : REGION_1;
-        next_timestamp = current_region->timestamp + 1;
+        in_use_region = current_region->region;
+        in_use_timestamp = current_region->timestamp;
+        next_region = in_use_region == REGION_1 ? REGION_2 : REGION_1;
+        next_timestamp = in_use_timestamp + 1;
     }
 
-    // SHMCTL(2): Mark the segment to be destroyed. The segment will actually be destroyed
-    // only after the last process detaches it.
+    // ensure that the shared memory region we want to write to is really removed
+    // this is only needef for failure recovery because we actually wait for all clients
+    // to detach at the end of the function
     if (storage::SharedMemory::RegionExists(next_region))
     {
+        util::Log(logWARNING) << "Old shared memory region " << regionToString(next_region) << " still exists.";
+        util::UnbufferedLog() << "Retrying removal... ";
+
+        // aquire a handle for the next shared memory region before we mark it for deletion
+        // we will need this to wait for all users to detach
+        auto next_shared_memory = makeSharedMemory(next_region);
+
         storage::SharedMemory::Remove(next_region);
+        util::UnbufferedLog() << "ok.";
+
+        util::UnbufferedLog() << "Waiting for clients to detach... ";
+        next_shared_memory->WaitForDetach();
+        util::UnbufferedLog() << " ok.";
     }
+
 
     util::Log() << "Loading data into " << regionToString(next_region) << " timestamp "
                 << next_timestamp;
@@ -129,8 +147,28 @@ int Storage::Run(int max_wait)
         current_region->timestamp = next_timestamp;
     }
 
-    util::Log() << "All data loaded.";
+    util::Log() << "All data loaded. Notify all client... ";
     barriers.region_condition.notify_all();
+
+    // SHMCTL(2): Mark the segment to be destroyed. The segment will actually be destroyed
+    // only after the last process detaches it.
+    if (in_use_region != REGION_NONE && storage::SharedMemory::RegionExists(in_use_region))
+    {
+        util::UnbufferedLog() << "Marking old shared memory region " << regionToString(in_use_region) << " for removal... ";
+
+        // aquire a handle for the old shared memory region before we mark it for deletion
+        // we will need this to wait for all users to detach
+        auto in_use_shared_memory = makeSharedMemory(in_use_region);
+
+        storage::SharedMemory::Remove(in_use_region);
+        util::UnbufferedLog() << "ok.";
+
+        util::UnbufferedLog() << "Waiting for clients to detach... ";
+        in_use_shared_memory->WaitForDetach();
+        util::UnbufferedLog() << " ok.";
+    }
+
+    util::Log() << "All clients switched.";
 
     return EXIT_SUCCESS;
 }

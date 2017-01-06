@@ -106,6 +106,18 @@ class SharedMemory
         return Remove(key);
     }
 
+    void WaitForDetach()
+    {
+        auto shmid = shm.get_shmid();
+        ::shmid_ds xsi_ds;
+        do
+        {
+            int ret = ::shmctl(shmid, IPC_STAT, &xsi_ds);
+            (void)ret; // no unused warning
+            BOOST_ASSERT(ret >= 0);
+        } while (xsi_ds.shm_nattch > 1);
+    }
+
   private:
     static bool RegionExists(const boost::interprocess::xsi_key &key)
     {
