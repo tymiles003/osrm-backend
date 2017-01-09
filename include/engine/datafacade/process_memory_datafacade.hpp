@@ -21,10 +21,12 @@ namespace datafacade
  * This class holds a unique_ptr to the memory block, so it
  * is auto-freed upon destruction.
  */
-class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeBase
+template<typename AlgorithmT>
+class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeBase<AlgorithmT>
 {
 
   private:
+    using SuperT = ContiguousInternalMemoryDataFacadeBase<AlgorithmT>;
     std::unique_ptr<char[]> internal_memory;
     std::unique_ptr<storage::DataLayout> internal_layout;
 
@@ -42,7 +44,7 @@ class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeB
         storage.PopulateData(*internal_layout, internal_memory.get());
 
         // Adjust all the private m_* members to point to the right places
-        InitializeInternalPointers(*internal_layout.get(), internal_memory.get());
+        SuperT::InitializeInternalPointers(*internal_layout.get(), internal_memory.get());
     }
 };
 }

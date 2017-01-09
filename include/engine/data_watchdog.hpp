@@ -22,6 +22,7 @@ namespace engine
 // This class monitors the shared memory region that contains the pointers to
 // the data and layout regions that should be used. This region is updated
 // once a new dataset arrives.
+template<typename AlgorithmT>
 class DataWatchdog
 {
   public:
@@ -40,7 +41,7 @@ class DataWatchdog
 
     using RegionsLock =
         boost::interprocess::sharable_lock<boost::interprocess::named_sharable_mutex>;
-    using LockAndFacade = std::pair<RegionsLock, std::shared_ptr<datafacade::BaseDataFacade>>;
+    using LockAndFacade = std::pair<RegionsLock, std::shared_ptr<datafacade::SharedMemoryDataFacade<AlgorithmT>>>;
 
     // This will either update the contens of facade or just leave it as is
     // if the update was already done by another thread
@@ -53,7 +54,7 @@ class DataWatchdog
             static_cast<const storage::SharedDataTimestamp *>(shared_regions->Ptr());
 
         const auto get_locked_facade = [this, shared_timestamp](
-            const std::shared_ptr<datafacade::SharedMemoryDataFacade> &facade) {
+            const std::shared_ptr<datafacade::SharedMemoryDataFacade<AlgorithmT>> &facade) {
             if (current_timestamp.region == storage::REGION_1)
             {
                 return std::make_pair(RegionsLock(shared_barriers->region_1_mutex), facade);
@@ -116,7 +117,7 @@ class DataWatchdog
             current_timestamp = *shared_timestamp;
         }
 
-        auto new_facade = std::make_shared<datafacade::SharedMemoryDataFacade>(
+        auto new_facade = std::make_shared<datafacade::SharedMemoryDataFacade<AlgorithmT>>(
             shared_barriers, current_timestamp.region, current_timestamp.timestamp);
         cached_facade = new_facade;
 
@@ -132,7 +133,7 @@ class DataWatchdog
     std::unique_ptr<storage::SharedMemory> shared_regions;
 
     mutable boost::shared_mutex facade_mutex;
-    std::weak_ptr<datafacade::SharedMemoryDataFacade> cached_facade;
+    std::weak_ptr<datafacade::SharedMemoryDataFacade<AlgorithmT>> cached_facade;
     storage::SharedDataTimestamp current_timestamp;
 };
 }

@@ -5,6 +5,7 @@
 #include "engine/api/table_parameters.hpp"
 #include "engine/api/trip_parameters.hpp"
 #include "engine/engine.hpp"
+#include "engine/algorithm.hpp"
 #include "engine/engine_config.hpp"
 #include "engine/status.hpp"
 
@@ -15,7 +16,17 @@ namespace osrm
 
 // Pimpl idiom
 
-OSRM::OSRM(engine::EngineConfig &config) : engine_(std::make_unique<engine::Engine>(config)) {}
+OSRM::OSRM(engine::EngineConfig &config)
+{
+    if (config.use_shared_memory)
+    {
+        engine_ = std::make_unique<engine::Engine<engine::algorithm::CH, engine::datafacade::SharedMemoryDataFacade>>(config);
+    }
+    else
+    {
+        engine_ = std::make_unique<engine::Engine<engine::algorithm::CH, engine::datafacade::ProcessMemoryDataFacade>>(config);
+    }
+}
 OSRM::~OSRM() = default;
 OSRM::OSRM(OSRM &&) noexcept = default;
 OSRM &OSRM::operator=(OSRM &&) noexcept = default;

@@ -20,10 +20,12 @@ namespace datafacade
  * Many SharedMemoryDataFacade objects can be created that point to the same shared
  * memory block.
  */
-class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase
+template <typename AlgorithmT>
+class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase<AlgorithmT>
 {
 
   protected:
+    using SuperT = ContiguousInternalMemoryDataFacadeBase<AlgorithmT>;
     std::unique_ptr<storage::SharedMemory> m_large_memory;
     std::shared_ptr<storage::SharedBarriers> shared_barriers;
     storage::SharedDataType data_region;
@@ -80,9 +82,9 @@ class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase
         BOOST_ASSERT(storage::SharedMemory::RegionExists(data_region));
         m_large_memory = storage::makeSharedMemory(data_region);
 
-        InitializeInternalPointers(*reinterpret_cast<storage::DataLayout *>(m_large_memory->Ptr()),
-                                   reinterpret_cast<char *>(m_large_memory->Ptr()) +
-                                       sizeof(storage::DataLayout));
+        SuperT::InitializeInternalPointers(
+            *reinterpret_cast<storage::DataLayout *>(m_large_memory->Ptr()),
+            reinterpret_cast<char *>(m_large_memory->Ptr()) + sizeof(storage::DataLayout));
     }
 };
 }

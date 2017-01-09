@@ -2,6 +2,7 @@
 #define CONTIGUOUS_INTERNALMEM_DATAFACADE_HPP
 
 #include "engine/datafacade/datafacade_base.hpp"
+#include "engine/datafacade/algorithm_datafacade.hpp"
 
 #include "extractor/compressed_edge_container.hpp"
 #include "extractor/guidance/turn_instruction.hpp"
@@ -12,6 +13,7 @@
 #include "util/guidance/entry_class.hpp"
 #include "util/guidance/turn_lanes.hpp"
 
+#include "engine/algorithm.hpp"
 #include "engine/geospatial_query.hpp"
 #include "util/exception.hpp"
 #include "util/exception_utils.hpp"
@@ -45,6 +47,9 @@ namespace engine
 namespace datafacade
 {
 
+template<typename AlgorithmT>
+class ContiguousInternalMemoryDataFacadeBase;
+
 /**
  * This base class implements the Datafacade interface for accessing
  * data that's stored in a single large block of memory (RAM).
@@ -52,7 +57,8 @@ namespace datafacade
  * In this case "internal memory" refers to RAM - as opposed to "external memory",
  * which usually refers to disk.
  */
-class ContiguousInternalMemoryDataFacadeBase : public BaseDataFacade
+template<>
+class ContiguousInternalMemoryDataFacadeBase<algorithm::CH> : public BaseDataFacade, public AlgorithmDataFacade<algorithm::CH>
 {
   private:
     using super = BaseDataFacade;
