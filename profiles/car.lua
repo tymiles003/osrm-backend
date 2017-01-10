@@ -34,12 +34,12 @@ access_tag_whitelist = Set {
 
 access_tag_blacklist = Set {
   'no',
-  'private',
+--  'private',
   'agricultural',
   'forestry',
   'emergency',
   'psv',
-  'delivery'
+--  'delivery'
 }
 
 access_tags_hierarchy = Sequence {
@@ -206,7 +206,7 @@ local turn_bias                  = properties.left_hand_driving and 1/1.075 or 1
 
 local obey_oneway                = true
 local ignore_areas               = true
-local ignore_hov_ways            = true
+local ignore_hov_ways            = false
 local ignore_toll_ways           = false
 
 local abs = math.abs
@@ -258,17 +258,17 @@ function node_function (node, result)
     if access_tag_blacklist[access] then
       result.barrier = true
     end
-  else
-    local barrier = node:get_value_by_key("barrier")
-    if barrier then
-      --  make an exception for rising bollard barriers
-      local bollard = node:get_value_by_key("bollard")
-      local rising_bollard = bollard and "rising" == bollard
+  --else
+    -- local barrier = node:get_value_by_key("barrier")
+    -- if barrier then
+    --   --  make an exception for rising bollard barriers
+    --   local bollard = node:get_value_by_key("bollard")
+    --   local rising_bollard = bollard and "rising" == bollard
 
-      if not barrier_whitelist[barrier] and not rising_bollard then
-        result.barrier = true
-      end
-    end
+    --   if not barrier_whitelist[barrier] and not rising_bollard then
+    --     result.barrier = true
+    --   end
+    --end
   end
 
   -- check if node is a traffic light
@@ -538,11 +538,11 @@ function handle_service(way,result)
   local service = way:get_value_by_key("service")
   if service then
     -- Set don't allow access to certain service roads
-    if service_tag_forbidden[service] then
-      result.forward_mode = mode.inaccessible
-      result.backward_mode = mode.inaccessible
-      return false
-    end
+    --if service_tag_forbidden[service] then
+    --  result.forward_mode = mode.inaccessible
+    --  result.backward_mode = mode.inaccessible
+    --  return false
+    --end
   end
 end
 
