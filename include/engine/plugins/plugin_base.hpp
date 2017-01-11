@@ -23,7 +23,8 @@ namespace engine
 namespace plugins
 {
 
-class BasePlugin
+// FIXME This should not be a class but a namespace with some free functions
+template <typename AlgorithmT, template <typename A> class FacadeT> class BasePlugin
 {
   protected:
     bool CheckAllCoordinates(const std::vector<util::Coordinate> &coordinates) const
@@ -108,7 +109,7 @@ class BasePlugin
 
     // Falls back to default_radius for non-set radii
     std::vector<std::vector<PhantomNodeWithDistance>>
-    GetPhantomNodesInRange(const datafacade::BaseDataFacade &facade,
+    GetPhantomNodesInRange(const FacadeT<AlgorithmT> &facade,
                            const api::BaseParameters &parameters,
                            const std::vector<double> radiuses) const
     {
@@ -150,7 +151,7 @@ class BasePlugin
     }
 
     std::vector<std::vector<PhantomNodeWithDistance>>
-    GetPhantomNodes(const datafacade::BaseDataFacade &facade,
+    GetPhantomNodes(const FacadeT<AlgorithmT> &facade,
                     const api::BaseParameters &parameters,
                     unsigned number_of_results) const
     {
@@ -216,7 +217,7 @@ class BasePlugin
         return phantom_nodes;
     }
 
-    std::vector<PhantomNodePair> GetPhantomNodes(const datafacade::BaseDataFacade &facade,
+    std::vector<PhantomNodePair> GetPhantomNodes(const FacadeT<AlgorithmT> &facade,
                                                  const api::BaseParameters &parameters) const
     {
         std::vector<PhantomNodePair> phantom_node_pairs(parameters.coordinates.size());

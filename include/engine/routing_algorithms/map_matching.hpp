@@ -3,6 +3,7 @@
 
 #include "engine/routing_algorithms/routing_base.hpp"
 
+#include "engine/algorithm.hpp"
 #include "engine/map_matching/hidden_markov_model.hpp"
 #include "engine/map_matching/matching_confidence.hpp"
 #include "engine/map_matching/sub_matching.hpp"
@@ -36,11 +37,13 @@ constexpr static const unsigned MAX_BROKEN_STATES = 10;
 static const constexpr double MATCHING_BETA = 10;
 constexpr static const double MAX_DISTANCE_DELTA = 2000.;
 
+template <typename AlgorithmT, template <typename A> class FacadeT> class MapMatching;
+
 // implements a hidden markov model map matching algorithm
-template <class DataFacadeT>
-class MapMatching final : public BasicRoutingInterface<DataFacadeT, MapMatching<DataFacadeT>>
+template <template <typename A> class FacadeT>
+class MapMatching<algorithm::CH, FacadeT> final : public BasicRouting<algorithm::CH, FacadeT>
 {
-    using super = BasicRoutingInterface<DataFacadeT, MapMatching<DataFacadeT>>;
+    using SuperT = BasicRouting<algorithm::CH, FacadeT>;
     using QueryHeap = SearchEngineData::QueryHeap;
     SearchEngineData &engine_working_data;
     map_matching::EmissionLogProbability default_emission_log_probability;
@@ -72,7 +75,7 @@ class MapMatching final : public BasicRoutingInterface<DataFacadeT, MapMatching<
     }
 
     SubMatchingList
-    operator()(const DataFacadeT &facade,
+    operator()(const FacadeT<algorithm::CH> &facade,
                const CandidateLists &candidates_list,
                const std::vector<util::Coordinate> &trace_coordinates,
                const std::vector<unsigned> &trace_timestamps,
@@ -237,7 +240,7 @@ class MapMatching final : public BasicRoutingInterface<DataFacadeT, MapMatching<
                         {
                             forward_core_heap.Clear();
                             reverse_core_heap.Clear();
-                            network_distance = super::GetNetworkDistanceWithCore(
+                            network_distance = SuperT::GetNetworkDistanceWithCore(
                                 facade,
                                 forward_heap,
                                 reverse_heap,
@@ -249,7 +252,7 @@ class MapMatching final : public BasicRoutingInterface<DataFacadeT, MapMatching<
                         }
                         else
                         {
-                            network_distance = super::GetNetworkDistance(
+                            network_distance = SuperT::GetNetworkDistance(
                                 facade,
                                 forward_heap,
                                 reverse_heap,

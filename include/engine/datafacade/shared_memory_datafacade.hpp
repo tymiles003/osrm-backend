@@ -21,11 +21,13 @@ namespace datafacade
  * memory block.
  */
 template <typename AlgorithmT>
-class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase<AlgorithmT>
+class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase, public ContiguousInternalMemoryAlgorithmDataFacade<AlgorithmT>
 {
 
   protected:
-    using SuperT = ContiguousInternalMemoryDataFacadeBase<AlgorithmT>;
+    using BaseT = ContiguousInternalMemoryDataFacadeBase;
+    using AlgorithmBaseT = ContiguousInternalMemoryAlgorithmDataFacade<AlgorithmT>;
+
     std::unique_ptr<storage::SharedMemory> m_large_memory;
     std::shared_ptr<storage::SharedBarriers> shared_barriers;
     storage::SharedDataType data_region;
@@ -82,7 +84,10 @@ class SharedMemoryDataFacade : public ContiguousInternalMemoryDataFacadeBase<Alg
         BOOST_ASSERT(storage::SharedMemory::RegionExists(data_region));
         m_large_memory = storage::makeSharedMemory(data_region);
 
-        SuperT::InitializeInternalPointers(
+        BaseT::InitializeInternalPointers(
+            *reinterpret_cast<storage::DataLayout *>(m_large_memory->Ptr()),
+            reinterpret_cast<char *>(m_large_memory->Ptr()) + sizeof(storage::DataLayout));
+        AlgorithmBaseT::InitializeInternalPointers(
             *reinterpret_cast<storage::DataLayout *>(m_large_memory->Ptr()),
             reinterpret_cast<char *>(m_large_memory->Ptr()) + sizeof(storage::DataLayout));
     }

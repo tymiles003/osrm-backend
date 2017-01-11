@@ -96,12 +96,12 @@ class Engine final : public EngineInterface
   private:
     DataFacadeProvider<AlgorithmT, FacadeT> facade_provider;
 
-    const plugins::ViaRoutePlugin route_plugin;
-    const plugins::TablePlugin table_plugin;
-    const plugins::NearestPlugin nearest_plugin;
-    const plugins::TripPlugin trip_plugin;
-    const plugins::MatchPlugin match_plugin;
-    const plugins::TilePlugin tile_plugin;
+    const plugins::ViaRoutePlugin<AlgorithmT, FacadeT> route_plugin;
+    const plugins::TablePlugin<AlgorithmT, FacadeT> table_plugin;
+    const plugins::NearestPlugin<AlgorithmT, FacadeT> nearest_plugin;
+    const plugins::TripPlugin<AlgorithmT, FacadeT> trip_plugin;
+    const plugins::MatchPlugin<AlgorithmT, FacadeT> match_plugin;
+    const plugins::TilePlugin<AlgorithmT, FacadeT> tile_plugin;
 };
 }
 }

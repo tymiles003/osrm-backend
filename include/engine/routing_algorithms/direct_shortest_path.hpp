@@ -1,14 +1,17 @@
 #ifndef DIRECT_SHORTEST_PATH_HPP
 #define DIRECT_SHORTEST_PATH_HPP
 
-#include <boost/assert.hpp>
-#include <iterator>
-
 #include "engine/routing_algorithms/routing_base.hpp"
+
+#include "engine/algorithm.hpp"
 #include "engine/search_engine_data.hpp"
 #include "util/integer_range.hpp"
 #include "util/timing_util.hpp"
 #include "util/typedefs.hpp"
+
+#include <boost/assert.hpp>
+
+#include <iterator>
 
 namespace osrm
 {
@@ -17,17 +20,18 @@ namespace engine
 namespace routing_algorithms
 {
 
+template <typename AlgorithmT, template <typename A> class FacadeT> class DirectShortestPathRouting;
+
 /// This is a striped down version of the general shortest path algorithm.
 /// The general algorithm always computes two queries for each leg. This is only
 /// necessary in case of vias, where the directions of the start node is constrainted
 /// by the previous route.
 /// This variation is only an optimazation for graphs with slow queries, for example
 /// not fully contracted graphs.
-template <class DataFacadeT>
-class DirectShortestPathRouting final
-    : public BasicRoutingInterface<DataFacadeT, DirectShortestPathRouting<DataFacadeT>>
+template <template <typename A> class FacadeT>
+class DirectShortestPathRouting<algorithm::CH, FacadeT> final : public BasicRouting<algorithm::CH, FacadeT>
 {
-    using super = BasicRoutingInterface<DataFacadeT, DirectShortestPathRouting<DataFacadeT>>;
+    using SuperT = BasicRouting<algorithm::CH, FacadeT>;
     using QueryHeap = SearchEngineData::QueryHeap;
     SearchEngineData &engine_working_data;
 
@@ -39,7 +43,7 @@ class DirectShortestPathRouting final
 
     ~DirectShortestPathRouting() {}
 
-    void operator()(const DataFacadeT &facade,
+    void operator()(const FacadeT<algorithm::CH> &facade,
                     const std::vector<PhantomNodes> &phantom_nodes_vector,
                     InternalRouteResult &raw_route_data) const
     {
@@ -102,25 +106,25 @@ class DirectShortestPathRouting final
             forward_core_heap.Clear();
             reverse_core_heap.Clear();
 
-            super::SearchWithCore(facade,
-                                  forward_heap,
-                                  reverse_heap,
-                                  forward_core_heap,
-                                  reverse_core_heap,
-                                  weight,
-                                  packed_leg,
-                                  DO_NOT_FORCE_LOOPS,
-                                  DO_NOT_FORCE_LOOPS);
+            SuperT::SearchWithCore(facade,
+                                   forward_heap,
+                                   reverse_heap,
+                                   forward_core_heap,
+                                   reverse_core_heap,
+                                   weight,
+                                   packed_leg,
+                                   DO_NOT_FORCE_LOOPS,
+                                   DO_NOT_FORCE_LOOPS);
         }
         else
         {
-            super::Search(facade,
-                          forward_heap,
-                          reverse_heap,
-                          weight,
-                          packed_leg,
-                          DO_NOT_FORCE_LOOPS,
-                          DO_NOT_FORCE_LOOPS);
+            SuperT::Search(facade,
+                           forward_heap,
+                           reverse_heap,
+                           weight,
+                           packed_leg,
+                           DO_NOT_FORCE_LOOPS,
+                           DO_NOT_FORCE_LOOPS);
         }
 
         // No path found for both target nodes?
@@ -140,11 +144,11 @@ class DirectShortestPathRouting final
         raw_route_data.target_traversed_in_reverse.push_back(
             (packed_leg.back() != phantom_node_pair.target_phantom.forward_segment_id.id));
 
-        super::UnpackPath(facade,
-                          packed_leg.begin(),
-                          packed_leg.end(),
-                          phantom_node_pair,
-                          raw_route_data.unpacked_path_segments.front());
+        SuperT::UnpackPath(facade,
+                           packed_leg.begin(),
+                           packed_leg.end(),
+                           phantom_node_pair,
+                           raw_route_data.unpacked_path_segments.front());
     }
 };
 }

@@ -22,11 +22,12 @@ namespace datafacade
  * is auto-freed upon destruction.
  */
 template<typename AlgorithmT>
-class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeBase<AlgorithmT>
+class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeBase, public ContiguousInternalMemoryAlgorithmDataFacade<AlgorithmT>
 {
 
   private:
-    using SuperT = ContiguousInternalMemoryDataFacadeBase<AlgorithmT>;
+    using BaseT = ContiguousInternalMemoryDataFacadeBase;
+    using AlgorithmBaseT = ContiguousInternalMemoryAlgorithmDataFacade<AlgorithmT>;
     std::unique_ptr<char[]> internal_memory;
     std::unique_ptr<storage::DataLayout> internal_layout;
 
@@ -44,7 +45,8 @@ class ProcessMemoryDataFacade final : public ContiguousInternalMemoryDataFacadeB
         storage.PopulateData(*internal_layout, internal_memory.get());
 
         // Adjust all the private m_* members to point to the right places
-        SuperT::InitializeInternalPointers(*internal_layout.get(), internal_memory.get());
+        BaseT::InitializeInternalPointers(*internal_layout.get(), internal_memory.get());
+        AlgorithmBaseT::InitializeInternalPointers(*internal_layout.get(), internal_memory.get());
     }
 };
 }

@@ -22,7 +22,7 @@ namespace trip
 {
 
 // computes the distance of a given permutation
-EdgeWeight ReturnDistance(const util::DistTableWrapper<EdgeWeight> &dist_table,
+inline EdgeWeight ReturnDistance(const util::DistTableWrapper<EdgeWeight> &dist_table,
                           const std::vector<NodeID> &location_order,
                           const EdgeWeight min_route_dist,
                           const std::size_t component_size)

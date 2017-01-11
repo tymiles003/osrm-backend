@@ -2,6 +2,8 @@
 #define MANY_TO_MANY_ROUTING_HPP
 
 #include "engine/routing_algorithms/routing_base.hpp"
+
+#include "engine/algorithm.hpp"
 #include "engine/search_engine_data.hpp"
 #include "util/typedefs.hpp"
 
@@ -19,11 +21,13 @@ namespace engine
 namespace routing_algorithms
 {
 
-template <class DataFacadeT>
-class ManyToManyRouting final
-    : public BasicRoutingInterface<DataFacadeT, ManyToManyRouting<DataFacadeT>>
+template <typename AlgorithmT, template <typename A> class FacadeT>
+class ManyToManyRouting;
+
+template <template <typename A> class FacadeT>
+class ManyToManyRouting<algorithm::CH, FacadeT> final : public BasicRouting<algorithm::CH, FacadeT>
 {
-    using super = BasicRoutingInterface<DataFacadeT, ManyToManyRouting<DataFacadeT>>;
+    using SuperT = BasicRouting<algorithm::CH, FacadeT>;
     using QueryHeap = SearchEngineData::QueryHeap;
     SearchEngineData &engine_working_data;
 
@@ -46,7 +50,7 @@ class ManyToManyRouting final
     {
     }
 
-    std::vector<EdgeWeight> operator()(const DataFacadeT &facade,
+    std::vector<EdgeWeight> operator()(const FacadeT<algorithm::CH> &facade,
                                        const std::vector<PhantomNode> &phantom_nodes,
                                        const std::vector<std::size_t> &source_indices,
                                        const std::vector<std::size_t> &target_indices) const
@@ -158,7 +162,7 @@ class ManyToManyRouting final
         return result_table;
     }
 
-    void ForwardRoutingStep(const DataFacadeT &facade,
+    void ForwardRoutingStep(const FacadeT<algorithm::CH> &facade,
                             const unsigned row_idx,
                             const unsigned number_of_targets,
                             QueryHeap &query_heap,
@@ -184,7 +188,7 @@ class ManyToManyRouting final
                 const EdgeWeight new_weight = source_weight + target_weight;
                 if (new_weight < 0)
                 {
-                    const EdgeWeight loop_weight = super::GetLoopWeight(facade, node);
+                    const EdgeWeight loop_weight = SuperT::GetLoopWeight(facade, node);
                     const int new_weight_with_loop = new_weight + loop_weight;
                     if (loop_weight != INVALID_EDGE_WEIGHT && new_weight_with_loop >= 0)
                     {
@@ -204,7 +208,7 @@ class ManyToManyRouting final
         RelaxOutgoingEdges<true>(facade, node, source_weight, query_heap);
     }
 
-    void BackwardRoutingStep(const DataFacadeT &facade,
+    void BackwardRoutingStep(const FacadeT<algorithm::CH> &facade,
                              const unsigned column_idx,
                              QueryHeap &query_heap,
                              SearchSpaceWithBuckets &search_space_with_buckets) const
@@ -224,7 +228,7 @@ class ManyToManyRouting final
     }
 
     template <bool forward_direction>
-    inline void RelaxOutgoingEdges(const DataFacadeT &facade,
+    inline void RelaxOutgoingEdges(const FacadeT<algorithm::CH> &facade,
                                    const NodeID node,
                                    const EdgeWeight weight,
                                    QueryHeap &query_heap) const
@@ -259,7 +263,7 @@ class ManyToManyRouting final
 
     // Stalling
     template <bool forward_direction>
-    inline bool StallAtNode(const DataFacadeT &facade,
+    inline bool StallAtNode(const FacadeT<algorithm::CH> &facade,
                             const NodeID node,
                             const EdgeWeight weight,
                             QueryHeap &query_heap) const
