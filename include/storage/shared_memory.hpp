@@ -115,6 +115,8 @@ class SharedMemory
             int ret = ::shmctl(shmid, IPC_STAT, &xsi_ds);
             (void)ret; // no unused warning
             BOOST_ASSERT(ret >= 0);
+
+            std::this_thread::sleep_for(std::chrono::microseconds(10));
         } while (xsi_ds.shm_nattch > 1);
     }
 

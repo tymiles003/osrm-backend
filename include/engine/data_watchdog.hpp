@@ -33,6 +33,7 @@ class DataWatchdog
         watcher = std::thread(&DataWatchdog::Run, this);
         while (!facade)
         {
+            std::this_thread::sleep_for(std::chrono::microseconds(10));
             BOOST_ASSERT(active);
             // wait until we have generated a facade
             // this will only take a few cycles or fail hard
