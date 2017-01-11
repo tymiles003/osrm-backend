@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <thread>
 
 namespace osrm
 {
@@ -116,7 +117,7 @@ class SharedMemory
             (void)ret; // no unused warning
             BOOST_ASSERT(ret >= 0);
 
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
         } while (xsi_ds.shm_nattch > 1);
     }
 

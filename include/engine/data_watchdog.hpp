@@ -30,14 +30,19 @@ class DataWatchdog
         : active(true)
         , timestamp(0)
     {
-        watcher = std::thread(&DataWatchdog::Run, this);
-        while (!facade)
+        // create the initial facade before launching the watchdog thread
         {
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
-            BOOST_ASSERT(active);
-            // wait until we have generated a facade
-            // this will only take a few cycles or fail hard
+            boost::interprocess::scoped_lock<boost::interprocess::named_mutex>
+                current_region_lock(barrier.region_mutex);
+
+            auto shared_memory = makeSharedMemory(storage::CURRENT_REGION);
+            auto current = static_cast<storage::SharedDataTimestamp *>(shared_memory->Ptr());
+
+            facade = std::make_shared<datafacade::SharedMemoryDataFacade>(current->region);
+            timestamp = current->timestamp;
         }
+
+        watcher = std::thread(&DataWatchdog::Run, this);
     }
 
     ~DataWatchdog()
