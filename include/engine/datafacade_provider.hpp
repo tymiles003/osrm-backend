@@ -21,7 +21,7 @@ class DataFacadeProvider<AlgorithmT, datafacade::SharedMemoryDataFacade>
     using FacadeT = datafacade::SharedMemoryDataFacade<AlgorithmT>;
 
 public:
-    DataFacadeProvider<FacadeT>(const storage::StorageConfig&) {}
+    DataFacadeProvider(const storage::StorageConfig&) {}
 
     std::shared_ptr<FacadeT> Get() const
     {
@@ -39,7 +39,7 @@ class DataFacadeProvider<AlgorithmT, datafacade::ProcessMemoryDataFacade>
     using FacadeT = datafacade::ProcessMemoryDataFacade<AlgorithmT>;
 
 public:
-    DataFacadeProvider<FacadeT>(const storage::StorageConfig& config)
+    DataFacadeProvider(const storage::StorageConfig& config)
         : immutable_data_facade(std::make_shared<FacadeT>(config))
     {
     }
